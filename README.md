@@ -158,9 +158,37 @@ This system addresses key challenges in ML operations:
 
 ## 📚 Documentation
 
-- [Architecture Overview](docs/architecture.md)
-- [Monitoring Pipeline](docs/monitoring_pipeline.md)
-- [API Reference](http://localhost:8000/docs) (when server is running)
+- [Research Notes & Planning](NOTES.md) - Research plan, experiments, MVP details
+
+## 🚀 Training Your First Model
+
+To train your first model, simply run:
+
+```bash
+python train_first_model.py
+```
+
+This will:
+1. Load Adult Income dataset (~39K train, ~9K test samples)
+2. Preprocess the data (handles numerical and categorical features)
+3. Train an XGBoost model
+4. Evaluate and save the model
+5. Generate visualizations and save metrics
+
+**Example Results:**
+- Accuracy: 0.8745
+- F1 Score: 0.7089
+- ROC AUC: 0.9290
+
+**Outputs:**
+- `models/trained_model.pkl` - Trained model
+- `models/preprocessor.pkl` - Preprocessing pipeline
+- `results/first_model_results.csv` - Performance metrics
+
+**Note:** Core dependencies are installed automatically. For full functionality:
+```bash
+pip install -r requirements.txt
+```
 
 ## 🤝 Contributing
 
