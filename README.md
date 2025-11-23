@@ -179,9 +179,13 @@ ai-reliability-dashboard/
 
 ## 📊 Datasets
 
-- **Adult Income (UCI)**: Default dataset, ~48K records, income prediction (>50K)
-- **COMPAS**
-- **Synthetic Data**: Generated with `generate_synthetic_data()` for testing
+**Adult Income (UCI):** Automatically downloaded on first run → `data/raw/adult.pkl`
+
+**COMPAS:**
+- Download: https://github.com/propublica/compas-analysis
+- Save to: `data/raw/compas-scores-two-years.csv`
+
+**Synthetic Data:** Generated automatically (no download needed)
 
 ---
 
