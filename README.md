@@ -47,13 +47,6 @@ python train_first_model.py
 
 **Expected output:**
 ```
-TRAINING COMPLETE!
-============================================================
-Model Performance:
-  Accuracy:  0.8745
-  F1 Score:  0.7089
-  ROC AUC:   0.9290
-
 Model saved to: models/trained_model.pkl
 Results saved to: results/first_model_results.csv
 ```
@@ -103,113 +96,6 @@ streamlit run src/dashboard/dashboard.py
 4. **Alerts appear** when drift is detected
 5. View visualizations showing drift scores
 
-### Option 2: FastAPI Backend
-
-```bash
-# Install FastAPI dependencies
-pip install fastapi uvicorn pydantic
-
-# Run API server
-uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-**Access:** 
-- API: `http://localhost:8000`
-- Interactive Docs: `http://localhost:8000/docs`
-- Health Check: `http://localhost:8000/manage/health`
-
-**Test with curl:**
-```bash
-# Health check
-curl http://localhost:8000/manage/health
-
-# Get model info (after training)
-curl http://localhost:8000/manage/info
-```
-
-**Make a prediction** (requires trained model):
-```bash
-curl -X POST http://localhost:8000/predict/single \
-  -H "Content-Type: application/json" \
-  -d "{\"features\": {\"age\": 35, \"education\": \"Bachelors\", \"hours-per-week\": 40}}"
-```
-
-### Option 3: Python Scripts (For Development)
-
-**Train and evaluate a model:**
-```python
-from src.data.load_data import load_adult_data
-from src.data.preprocess import DataPreprocessor
-from src.models.train_model import ModelTrainer
-from src.models.evaluate_model import ModelEvaluator
-
-# Load data
-X_train, X_test, y_train, y_test = load_adult_data()
-
-# Preprocess
-preprocessor = DataPreprocessor()
-X_train_processed = preprocessor.fit_transform(X_train)
-X_test_processed = preprocessor.transform(X_test)
-
-# Train
-trainer = ModelTrainer(model_type='xgboost')
-model = trainer.train(X_train_processed, y_train)
-
-# Evaluate
-evaluator = ModelEvaluator(model)
-metrics = evaluator.evaluate(X_test_processed, y_test)
-print(f"Accuracy: {metrics['accuracy']:.4f}")
-print(f"F1 Score: {metrics['f1']:.4f}")
-```
-
-**Monitor performance with alerts:**
-```python
-from src.monitoring.performance_metrics import PerformanceMonitor
-from src.monitoring.alerts import AlertManager
-
-# Set baseline metrics
-baseline_metrics = {
-    'accuracy': 0.87,
-    'f1': 0.71,
-    'roc_auc': 0.93
-}
-
-# Monitor with alerts
-monitor = PerformanceMonitor(model, baseline_metrics=baseline_metrics, threshold=0.05)
-alert_manager = AlertManager()
-
-results = monitor.monitor(X_test_processed, y_test)
-current_metrics = results['metrics']
-
-# Generate alerts
-alerts = alert_manager.check_performance_degradation(
-    current_metrics, baseline_metrics, threshold=0.05
-)
-
-# Display alerts
-for alert in alerts:
-    print(f"[{alert.severity.value.upper()}] {alert.title}: {alert.message}")
-```
-
-**Detect drift:**
-```python
-from src.monitoring.drift_metrics import DriftDetector
-from src.data.preprocess import create_drift_data
-
-# Create drifted data
-X_drifted = create_drift_data(X_test_processed, drift_intensity=0.3)
-
-# Detect drift
-detector = DriftDetector(X_test_processed, threshold=0.05)
-drift_results = detector.detect_drift(X_drifted, methods=['ks', 'psi'])
-
-if drift_results['summary']['drift_detected']:
-    print("⚠️ Drift detected!")
-else:
-    print("✅ No drift detected")
-```
-
----
 
 ## 📦 Project Structure
 
@@ -246,58 +132,6 @@ ai-reliability-dashboard/
 ```
 
 ---
-
-## 🧪 Testing the Code Right Now
-
-### Quick Test (5 minutes)
-
-1. **Train a model:**
-   ```bash
-   python train_first_model.py
-   ```
-   ✅ You should see training progress and final metrics
-
-2. **Check generated files:**
-   ```bash
-   # Check model was saved
-   dir models\trained_model.pkl
-   
-   # Check results
-   dir results\first_model_results.csv
-   ```
-   ✅ Files should exist
-
-3. **Run dashboard:**
-   ```bash
-   streamlit run src/dashboard/dashboard.py
-   ```
-   ✅ Browser should open to `http://localhost:8501`
-
-4. **In the dashboard:**
-   - Click "Home" - should show system status
-   - Click "Performance Monitoring" - should show alert system
-   - Load data, train model, check alerts
-
-### Comprehensive Test (15 minutes)
-
-1. **Train model:**
-   ```bash
-   python train_first_model.py
-   ```
-
-2. **Test API:**
-   ```bash
-   # Terminal 1: Start API
-   uvicorn src.api.main:app --reload
-   
-   # Terminal 2: Test health check
-   curl http://localhost:8000/manage/health
-   ```
-
-3. **Test Dashboard with Alerts:**
-   ```bash
-   streamlit run src/dashboard/dashboard.py
-   ```
    
    **Workflow:**
    - Load Adult Income dataset
@@ -346,7 +180,7 @@ ai-reliability-dashboard/
 ## 📊 Datasets
 
 - **Adult Income (UCI)**: Default dataset, ~48K records, income prediction (>50K)
-- **COMPAS**: Requires manual download from ProPublica
+- **COMPAS**
 - **Synthetic Data**: Generated with `generate_synthetic_data()` for testing
 
 ---
@@ -362,43 +196,11 @@ ai-reliability-dashboard/
 - FastAPI, Streamlit, Plotly for dashboard
 - Additional monitoring libraries
 
----
-
-## 🚨 Common Issues & Solutions
-
-**Issue: "ModuleNotFoundError: No module named 'xgboost'"**
-```bash
-pip install xgboost
-```
-
-**Issue: "ModuleNotFoundError: No module named 'openml'"**
-```bash
-pip install openml
-```
-
-**Issue: Dashboard won't start**
-```bash
-pip install streamlit
-streamlit run src/dashboard/dashboard.py
-```
-
-**Issue: API won't start**
-```bash
-pip install fastapi uvicorn
-uvicorn src.api.main:app --reload
-```
-
-**Issue: No alerts showing**
-- Make sure you've set a baseline in Performance Monitoring
-- Generate some drift (drift intensity > 0.3) to see drift alerts
-
----
 
 ## 📚 Additional Resources
 
 - **Research Notes**: See [NOTES.md](NOTES.md) for research plan and experiment details
-- **API Documentation**: Available at `http://localhost:8000/docs` when API is running
-- **Logs**: Check `logs/app.log` for detailed logs
+
 
 ---
 
