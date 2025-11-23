@@ -16,6 +16,7 @@ from src.models.evaluate_model import evaluate_model
 from src.monitoring.drift_metrics import DriftDetector, detect_prediction_drift
 from src.monitoring.performance_metrics import PerformanceMonitor
 from src.monitoring.fairness_metrics import FairnessMonitor
+from src.monitoring.alerts import AlertManager, AlertSeverity
 from src.dashboard.plots import (
     plot_performance_metrics, plot_confusion_matrix, plot_drift_scores,
     plot_fairness_metrics, plot_group_performance, plot_prediction_distribution,
@@ -52,6 +53,34 @@ st.markdown("""
         border-radius: 0.5rem;
         background-color: #f0f2f6;
     }
+    .alert-critical {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #fee;
+        border-left: 5px solid #dc3545;
+        margin-bottom: 1rem;
+    }
+    .alert-warning {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #fff3cd;
+        border-left: 5px solid #ffc107;
+        margin-bottom: 1rem;
+    }
+    .alert-info {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #d1ecf1;
+        border-left: 5px solid #17a2b8;
+        margin-bottom: 1rem;
+    }
+    .alert-success {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #d4edda;
+        border-left: 5px solid #28a745;
+        margin-bottom: 1rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -70,6 +99,53 @@ def load_model_and_data():
         st.session_state.y_train = None
     if 'y_test' not in st.session_state:
         st.session_state.y_test = None
+    if 'alert_manager' not in st.session_state:
+        st.session_state.alert_manager = AlertManager()
+    if 'baseline_metrics' not in st.session_state:
+        st.session_state.baseline_metrics = None
+
+
+def display_alerts(alert_manager: AlertManager, show_all: bool = False):
+    """Display alerts at the top of the page."""
+    alerts = alert_manager.get_active_alerts()
+    
+    if not alerts:
+        return
+    
+    # Filter alerts based on show_all
+    if not show_all:
+        alerts = alert_manager.get_warning_alerts()
+    
+    if not alerts:
+        return
+    
+    # Sort by severity (critical first)
+    severity_order = {AlertSeverity.CRITICAL: 0, AlertSeverity.WARNING: 1, AlertSeverity.INFO: 2, AlertSeverity.SUCCESS: 3}
+    alerts.sort(key=lambda x: severity_order.get(x.severity, 99))
+    
+    # Display alerts
+    st.markdown("---")
+    st.markdown("### 🚨 Active Alerts")
+    
+    for alert in alerts:
+        severity_class = f"alert-{alert.severity.value}"
+        icon_map = {
+            AlertSeverity.CRITICAL: "🔴",
+            AlertSeverity.WARNING: "⚠️",
+            AlertSeverity.INFO: "ℹ️",
+            AlertSeverity.SUCCESS: "✅"
+        }
+        icon = icon_map.get(alert.severity, "ℹ️")
+        
+        alert_html = f"""
+        <div class="{severity_class}">
+            <strong>{icon} {alert.title}</strong><br>
+            {alert.message}
+        </div>
+        """
+        st.markdown(alert_html, unsafe_allow_html=True)
+    
+    st.markdown("---")
 
 
 def main():
@@ -82,6 +158,9 @@ def main():
     st.markdown('<p class="main-header">🔍 Trustworthy AI Monitor</p>', unsafe_allow_html=True)
     st.markdown("**Automated MLOps System for Model Reliability and Fairness**")
     
+    # Display alerts at the top
+    display_alerts(st.session_state.alert_manager, show_all=False)
+    
     # Sidebar
     st.sidebar.title("Navigation")
     page = st.sidebar.radio(
@@ -89,6 +168,18 @@ def main():
         ["Home", "Data Explorer", "Model Training", "Performance Monitoring", 
          "Drift Detection", "Fairness Analysis", "Live Predictions"]
     )
+    
+    # Alert summary in sidebar
+    alert_summary = st.session_state.alert_manager.get_alerts_summary()
+    if alert_summary['total'] > 0:
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### Alert Status")
+        if alert_summary['critical'] > 0:
+            st.sidebar.error(f"🔴 Critical: {alert_summary['critical']}")
+        if alert_summary['warning'] > 0:
+            st.sidebar.warning(f"⚠️ Warnings: {alert_summary['warning']}")
+        if alert_summary['info'] > 0:
+            st.sidebar.info(f"ℹ️ Info: {alert_summary['info']}")
     
     # Main content based on selected page
     if page == "Home":
@@ -129,7 +220,7 @@ def show_home_page():
     # System status
     st.markdown('<p class="sub-header">System Status</p>', unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         model_status = "✅ Loaded" if st.session_state.model is not None else "❌ Not Loaded"
@@ -140,6 +231,15 @@ def show_home_page():
         st.metric("Data", data_status)
     
     with col3:
+        alert_summary = st.session_state.alert_manager.get_alerts_summary()
+        if alert_summary['critical'] > 0:
+            st.metric("Alerts", f"🔴 {alert_summary['critical']}", delta=f"⚠️ {alert_summary['warning']}")
+        elif alert_summary['warning'] > 0:
+            st.metric("Alerts", f"⚠️ {alert_summary['warning']}", delta="Active")
+        else:
+            st.metric("Alerts", "✅ None", delta="All clear")
+    
+    with col4:
         st.metric("Version", "0.1.0")
 
 
@@ -267,6 +367,21 @@ def show_performance_monitoring():
         st.warning("Please train a model first in the Model Training page.")
         return
     
+    # Set baseline metrics button
+    col1, col2 = st.columns([3, 1])
+    with col2:
+        if st.button("Set Current as Baseline"):
+            if st.session_state.X_test is not None:
+                X_test = st.session_state.X_test
+                if st.session_state.preprocessor is not None:
+                    X_test = st.session_state.preprocessor.transform(X_test)
+                
+                monitor = PerformanceMonitor(st.session_state.model)
+                baseline_metrics = monitor.calculate_metrics(X_test, st.session_state.y_test)
+                st.session_state.baseline_metrics = baseline_metrics
+                st.session_state.alert_manager.clear_alerts()  # Clear alerts when setting new baseline
+                st.success("Baseline metrics set!")
+    
     if st.button("Calculate Performance Metrics"):
         with st.spinner("Calculating metrics..."):
             try:
@@ -274,8 +389,48 @@ def show_performance_monitoring():
                 if st.session_state.preprocessor is not None:
                     X_test = st.session_state.preprocessor.transform(X_test)
                 
-                monitor = PerformanceMonitor(st.session_state.model)
+                # Get or create baseline
+                baseline_metrics = st.session_state.baseline_metrics
+                if baseline_metrics is None:
+                    st.warning("⚠️ No baseline set. Click 'Set Current as Baseline' first, or current metrics will be used as baseline.")
+                    # Use current metrics as baseline if none exists
+                    monitor = PerformanceMonitor(st.session_state.model)
+                    baseline_metrics = monitor.calculate_metrics(X_test, st.session_state.y_test)
+                    st.session_state.baseline_metrics = baseline_metrics
+                
+                monitor = PerformanceMonitor(
+                    st.session_state.model,
+                    baseline_metrics=baseline_metrics,
+                    threshold=0.05
+                )
                 results = monitor.monitor(X_test, st.session_state.y_test)
+                
+                # Check for degradation and generate alerts
+                current_metrics = results['metrics']
+                alerts = st.session_state.alert_manager.check_performance_degradation(
+                    current_metrics, baseline_metrics, threshold=0.05
+                )
+                
+                # Check for latency alerts
+                latency_alerts = st.session_state.alert_manager.check_latency_alerts(
+                    results['latency'], max_latency_ms=200.0
+                )
+                alerts.extend(latency_alerts)
+                
+                # Add alerts to manager
+                for alert in alerts:
+                    st.session_state.alert_manager.add_alert(alert)
+                
+                # Display alerts if any
+                if alerts:
+                    st.markdown("### 🚨 Performance Alerts")
+                    for alert in alerts:
+                        if alert.severity == AlertSeverity.CRITICAL:
+                            st.error(f"🔴 **{alert.title}**: {alert.message}")
+                        elif alert.severity == AlertSeverity.WARNING:
+                            st.warning(f"⚠️ **{alert.title}**: {alert.message}")
+                        else:
+                            st.info(f"ℹ️ **{alert.title}**: {alert.message}")
                 
                 # Display metrics
                 st.markdown("### Performance Metrics")
@@ -283,14 +438,43 @@ def show_performance_monitoring():
                 metrics = results['metrics']
                 col1, col2, col3, col4 = st.columns(4)
                 
+                # Compare with baseline
+                baseline_acc = baseline_metrics.get('accuracy', 0)
+                current_acc = metrics['accuracy']
+                acc_delta = current_acc - baseline_acc
+                
                 with col1:
-                    st.metric("Accuracy", f"{metrics['accuracy']:.4f}")
+                    st.metric("Accuracy", f"{metrics['accuracy']:.4f}", delta=f"{acc_delta:+.4f}")
+                
                 with col2:
                     st.metric("Precision", f"{metrics['precision']:.4f}")
+                
                 with col3:
                     st.metric("Recall", f"{metrics['recall']:.4f}")
+                
                 with col4:
                     st.metric("F1 Score", f"{metrics['f1']:.4f}")
+                
+                if 'roc_auc' in metrics:
+                    st.metric("ROC AUC", f"{metrics['roc_auc']:.4f}")
+                
+                # Degradation info
+                degradation = results['degradation']
+                if degradation.get('degradation_detected', False):
+                    st.markdown("### ⚠️ Degradation Analysis")
+                    degraded_metrics = [
+                        m for m, v in degradation['metrics'].items() 
+                        if v.get('degraded', False)
+                    ]
+                    st.warning(f"**Degradation detected in:** {', '.join(degraded_metrics)}")
+                    
+                    # Show degradation details
+                    for metric_name, metric_data in degradation['metrics'].items():
+                        if metric_data.get('degraded', False):
+                            with st.expander(f"📉 {metric_name.upper()} Degradation Details"):
+                                st.write(f"**Baseline:** {metric_data['baseline']:.4f}")
+                                st.write(f"**Current:** {metric_data['current']:.4f}")
+                                st.write(f"**Change:** {metric_data['relative_change']*100:+.2f}%")
                 
                 # Latency metrics
                 st.markdown("### Latency Metrics")
@@ -299,9 +483,16 @@ def show_performance_monitoring():
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
-                    st.metric("Mean Latency", f"{latency['mean_latency_seconds']*1000:.2f}ms")
+                    latency_ms = latency['mean_latency_seconds']*1000
+                    latency_delta = None
+                    if latency_ms > 200:
+                        latency_delta = f"⚠️ High"
+                    st.metric("Mean Latency", f"{latency_ms:.2f}ms", delta=latency_delta)
+                
                 with col2:
-                    st.metric("P95 Latency", f"{latency['p95_latency_seconds']*1000:.2f}ms")
+                    p95_latency_ms = latency['p95_latency_seconds']*1000
+                    st.metric("P95 Latency", f"{p95_latency_ms:.2f}ms")
+                
                 with col3:
                     st.metric("Throughput", f"{latency['throughput_per_second']:.0f}/s")
                 
@@ -329,10 +520,24 @@ def show_drift_detection():
                 detector = DriftDetector(st.session_state.X_test, threshold=0.05)
                 drift_results = detector.detect_drift(X_drifted, methods=['ks', 'psi'])
                 
+                # Generate alerts for drift
+                drift_alerts = st.session_state.alert_manager.check_drift_alerts(drift_results)
+                for alert in drift_alerts:
+                    st.session_state.alert_manager.add_alert(alert)
+                
                 st.markdown("### Drift Detection Results")
                 
                 if drift_results['summary']['drift_detected']:
                     st.warning("⚠️ Drift detected in the data!")
+                    
+                    # Show alerts
+                    if drift_alerts:
+                        st.markdown("### 🚨 Drift Alerts")
+                        for alert in drift_alerts:
+                            if alert.severity == AlertSeverity.CRITICAL:
+                                st.error(f"🔴 **{alert.title}**: {alert.message}")
+                            else:
+                                st.warning(f"⚠️ **{alert.title}**: {alert.message}")
                 else:
                     st.success("✅ No significant drift detected.")
                 
@@ -388,11 +593,25 @@ def show_fairness_analysis():
                     X_test, st.session_state.y_test.values, y_pred
                 )
                 
+                # Generate alerts for fairness violations
+                fairness_alerts = st.session_state.alert_manager.check_fairness_alerts(fairness_report)
+                for alert in fairness_alerts:
+                    st.session_state.alert_manager.add_alert(alert)
+                
                 # Display results
                 st.markdown("### Fairness Report")
                 
                 if fairness_report['fairness_violations_detected']:
                     st.warning(f"⚠️ {fairness_report['total_violations']} fairness violations detected!")
+                    
+                    # Show alerts
+                    if fairness_alerts:
+                        st.markdown("### 🚨 Fairness Alerts")
+                        for alert in fairness_alerts:
+                            if alert.severity == AlertSeverity.CRITICAL:
+                                st.error(f"🔴 **{alert.title}**: {alert.message}")
+                            else:
+                                st.warning(f"⚠️ **{alert.title}**: {alert.message}")
                 else:
                     st.success("✅ No fairness violations detected.")
                 
