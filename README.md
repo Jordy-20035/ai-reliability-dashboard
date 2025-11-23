@@ -66,11 +66,13 @@ Results saved to: results/first_model_results.csv
 # Install Streamlit if not already installed
 pip install streamlit plotly
 
-# Run the dashboard
+# Run from project root directory
 streamlit run src/dashboard/dashboard.py
 ```
 
-**Access:** Open your browser to `http://localhost:8501`
+**Note:** Always run from the project root (where `train_first_model.py` is located), not from inside `src/` directory.
+
+**Access:** Browser opens automatically to `http://localhost:8501`
 
 **Dashboard Features:**
 - **Home**: System status and alert summary
