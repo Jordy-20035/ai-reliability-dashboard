@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Optional, Any, Tuple
 from scipy import stats
-from scipy.spatial.distance import wasserstein_distance
+from scipy.stats import wasserstein_distance
 
 from src.utils.logger import get_logger
 
