@@ -566,28 +566,47 @@ def show_model_training():
                         if not isinstance(cm, np.ndarray):
                             cm = np.array(cm)
                         
-                        # Create and display the plot
-                        fig = plot_confusion_matrix(cm)
+                        # Debug: Show raw confusion matrix
+                        logger.debug(f"Confusion matrix shape: {cm.shape}, values: {cm}")
+                        
+                        # Ensure 2D array
+                        if cm.ndim == 1:
+                            # If 1D, reshape to 2D
+                            size = int(np.sqrt(len(cm)))
+                            cm = cm.reshape(size, size)
+                        elif cm.ndim > 2:
+                            cm = cm.reshape(cm.shape[-2], cm.shape[-1])
+                        
+                        # Create and display the plot with proper labels
+                        labels = ['Negative', 'Positive']
+                        if cm.shape[0] == 2 and cm.shape[1] == 2:
+                            fig = plot_confusion_matrix(cm, labels=labels)
+                        else:
+                            fig = plot_confusion_matrix(cm)
+                        
                         st.plotly_chart(fig, use_container_width=True)
                         
                         # Also show as a table for clarity
                         st.markdown("#### Confusion Matrix Values")
-                        cm_df = pd.DataFrame(
-                            cm,
-                            index=['Actual Negative', 'Actual Positive'],
-                            columns=['Predicted Negative', 'Predicted Positive']
-                        )
+                        if cm.shape[0] == 2 and cm.shape[1] == 2:
+                            cm_df = pd.DataFrame(
+                                cm,
+                                index=['Actual Negative', 'Actual Positive'],
+                                columns=['Predicted Negative', 'Predicted Positive']
+                            )
+                        else:
+                            cm_df = pd.DataFrame(cm)
                         st.dataframe(cm_df, use_container_width=True)
                         
                         # Show individual values
                         st.markdown("#### Breakdown")
                         col1, col2 = st.columns(2)
                         with col1:
-                            st.write(f"**True Negatives (TN):** {metrics.get('tn', cm[0, 0])}")
-                            st.write(f"**False Positives (FP):** {metrics.get('fp', cm[0, 1])}")
+                            st.write(f"**True Negatives (TN):** {metrics.get('tn', int(cm[0, 0]))}")
+                            st.write(f"**False Positives (FP):** {metrics.get('fp', int(cm[0, 1]))}")
                         with col2:
-                            st.write(f"**False Negatives (FN):** {metrics.get('fn', cm[1, 0])}")
-                            st.write(f"**True Positives (TP):** {metrics.get('tp', cm[1, 1])}")
+                            st.write(f"**False Negatives (FN):** {metrics.get('fn', int(cm[1, 0]))}")
+                            st.write(f"**True Positives (TP):** {metrics.get('tp', int(cm[1, 1]))}")
                     else:
                         st.warning("⚠️ Confusion matrix not available in metrics. Available keys: " + ", ".join(metrics.keys()))
                 except Exception as cm_error:
