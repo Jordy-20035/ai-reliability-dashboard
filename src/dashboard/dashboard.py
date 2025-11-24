@@ -452,6 +452,53 @@ def show_model_training():
         st.warning("Please load a dataset first in the Data Explorer page.")
         return
     
+    # Show previously trained metrics if available
+    if 'training_metrics' in st.session_state and st.session_state.training_metrics is not None:
+        st.info("📊 Showing results from previous training. Train a new model to update.")
+        metrics = st.session_state.training_metrics
+        
+        st.markdown("### Previous Training Results")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Accuracy", f"{metrics['accuracy']:.4f}")
+        with col2:
+            st.metric("Precision", f"{metrics['precision']:.4f}")
+        with col3:
+            st.metric("Recall", f"{metrics['recall']:.4f}")
+        with col4:
+            st.metric("F1 Score", f"{metrics['f1']:.4f}")
+        
+        if 'roc_auc' in metrics:
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("ROC AUC", f"{metrics['roc_auc']:.4f}")
+            with col2:
+                if 'pr_auc' in metrics:
+                    st.metric("PR AUC", f"{metrics['pr_auc']:.4f}")
+        
+        # Show confusion matrix
+        st.markdown("### Confusion Matrix")
+        try:
+            if 'confusion_matrix' in metrics and metrics['confusion_matrix'] is not None:
+                cm = metrics['confusion_matrix']
+                if not isinstance(cm, np.ndarray):
+                    cm = np.array(cm)
+                fig = plot_confusion_matrix(cm)
+                st.plotly_chart(fig, use_container_width=True)
+                
+                st.markdown("#### Confusion Matrix Values")
+                cm_df = pd.DataFrame(
+                    cm,
+                    index=['Actual Negative', 'Actual Positive'],
+                    columns=['Predicted Negative', 'Predicted Positive']
+                )
+                st.dataframe(cm_df, use_container_width=True)
+        except Exception as e:
+            st.warning(f"Could not display confusion matrix: {e}")
+        
+        st.markdown("---")
+    
     # Model configuration
     col1, col2 = st.columns(2)
     
@@ -484,6 +531,9 @@ def show_model_training():
                 # Evaluate
                 metrics = evaluate_model(model, X_test, st.session_state.y_test)
                 
+                # Store metrics in session state for persistence
+                st.session_state.training_metrics = metrics
+                
                 st.success("Model trained successfully!")
                 
                 # Display metrics
@@ -500,15 +550,56 @@ def show_model_training():
                     st.metric("F1 Score", f"{metrics['f1']:.4f}")
                 
                 if 'roc_auc' in metrics:
-                    st.metric("ROC AUC", f"{metrics['roc_auc']:.4f}")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("ROC AUC", f"{metrics['roc_auc']:.4f}")
+                    with col2:
+                        if 'pr_auc' in metrics:
+                            st.metric("PR AUC", f"{metrics['pr_auc']:.4f}")
                 
                 # Confusion matrix
                 st.markdown("### Confusion Matrix")
-                fig = plot_confusion_matrix(metrics['confusion_matrix'])
-                st.plotly_chart(fig, use_container_width=True)
+                try:
+                    if 'confusion_matrix' in metrics and metrics['confusion_matrix'] is not None:
+                        cm = metrics['confusion_matrix']
+                        # Ensure it's a numpy array
+                        if not isinstance(cm, np.ndarray):
+                            cm = np.array(cm)
+                        
+                        # Create and display the plot
+                        fig = plot_confusion_matrix(cm)
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Also show as a table for clarity
+                        st.markdown("#### Confusion Matrix Values")
+                        cm_df = pd.DataFrame(
+                            cm,
+                            index=['Actual Negative', 'Actual Positive'],
+                            columns=['Predicted Negative', 'Predicted Positive']
+                        )
+                        st.dataframe(cm_df, use_container_width=True)
+                        
+                        # Show individual values
+                        st.markdown("#### Breakdown")
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.write(f"**True Negatives (TN):** {metrics.get('tn', cm[0, 0])}")
+                            st.write(f"**False Positives (FP):** {metrics.get('fp', cm[0, 1])}")
+                        with col2:
+                            st.write(f"**False Negatives (FN):** {metrics.get('fn', cm[1, 0])}")
+                            st.write(f"**True Positives (TP):** {metrics.get('tp', cm[1, 1])}")
+                    else:
+                        st.warning("⚠️ Confusion matrix not available in metrics. Available keys: " + ", ".join(metrics.keys()))
+                except Exception as cm_error:
+                    st.error(f"❌ Error displaying confusion matrix: {cm_error}")
+                    import traceback
+                    with st.expander("Show Error Details"):
+                        st.code(traceback.format_exc())
                 
             except Exception as e:
                 st.error(f"Error training model: {e}")
+                import traceback
+                st.code(traceback.format_exc())
 
 
 def show_performance_monitoring():
