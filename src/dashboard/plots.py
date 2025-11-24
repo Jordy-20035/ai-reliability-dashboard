@@ -116,7 +116,6 @@ def plot_confusion_matrix(
         showscale=True,
         colorbar=dict(
             title=dict(text="Count", font=dict(size=14, color='#333')),
-            titleside="right",
             len=0.7,
             thickness=20,
             tickfont=dict(size=11)
