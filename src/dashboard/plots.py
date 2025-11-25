@@ -58,7 +58,7 @@ def plot_confusion_matrix(
     labels: List[str] = ['Negative', 'Positive']
 ) -> go.Figure:
     """
-    Plot confusion matrix heatmap with vibrant colors.
+    Plot confusion matrix heatmap.
     
     Args:
         confusion_matrix: 2D numpy array
@@ -68,97 +68,30 @@ def plot_confusion_matrix(
         Plotly figure
     """
     # Ensure it's a numpy array
-    cm = np.array(confusion_matrix).astype(float)
+    cm = np.array(confusion_matrix)
     
-    # Ensure it's 2D
-    if cm.ndim != 2:
-        raise ValueError(f"Confusion matrix must be 2D, got {cm.ndim}D")
+    # Create labels for axes
+    x_labels = labels if len(labels) >= cm.shape[1] else ['Negative', 'Positive']
+    y_labels = labels if len(labels) >= cm.shape[0] else ['Negative', 'Positive']
     
-    # Create labels for axes (use provided labels or default)
-    x_labels = labels if len(labels) >= cm.shape[1] else ['Negative', 'Positive'][:cm.shape[1]]
-    y_labels = labels if len(labels) >= cm.shape[0] else ['Negative', 'Positive'][:cm.shape[0]]
-    
-    # Ensure we have exactly the right number of labels
-    if len(x_labels) < cm.shape[1]:
-        x_labels = x_labels + [f'Class {i}' for i in range(len(x_labels), cm.shape[1])]
-    if len(y_labels) < cm.shape[0]:
-        y_labels = y_labels + [f'Class {i}' for i in range(len(y_labels), cm.shape[0])]
-    
-    x_labels = x_labels[:cm.shape[1]]
-    y_labels = y_labels[:cm.shape[0]]
-    
-    # Create text annotations showing the values
-    text_array = [[f'{int(val)}' for val in row] for row in cm]
-    
-    # Use numeric indices for x and y, we'll add labels later
-    y_indices = list(range(len(y_labels)))
-    x_indices = list(range(len(x_labels)))
-    
-    # Create the heatmap with vibrant colorscale
-    # Custom vibrant blue gradient - very colorful!
-    custom_colorscale = [
-        [0.0, '#e3f2fd'],    # Very light blue
-        [0.2, '#90caf9'],    # Light blue
-        [0.4, '#42a5f5'],    # Medium light blue
-        [0.6, '#1e88e5'],    # Medium blue
-        [0.8, '#1565c0'],    # Dark blue
-        [1.0, '#0d47a1']     # Very dark blue
-    ]
-    
+    # Simple heatmap
     fig = go.Figure(data=go.Heatmap(
-        z=cm.tolist(),  # Convert numpy array to list for Plotly
-        x=x_indices,
-        y=y_indices,
-        text=text_array,
-        texttemplate='<b>%{text}</b>',
-        textfont=dict(size=24, color='white', family="Arial Black"),
-        colorscale=custom_colorscale,  # Very vibrant blue gradient
-        showscale=True,
-        colorbar=dict(
-            title=dict(text="Count", font=dict(size=14, color='#333')),
-            len=0.7,
-            thickness=20,
-            tickfont=dict(size=11)
-        ),
-        hovertemplate='<b>Predicted:</b> %{x}<br><b>Actual:</b> %{y}<br><b>Count:</b> %{z}<extra></extra>',
-        xgap=2,
-        ygap=2
+        z=cm,
+        x=x_labels,
+        y=y_labels,
+        text=cm,
+        texttemplate='%{text}',
+        textfont={"size": 16},
+        colorscale='Blues',
+        showscale=True
     ))
     
-    # Update layout for better appearance
     fig.update_layout(
-        title=dict(
-            text="Confusion Matrix",
-            font=dict(size=22, color='#003366', family="Arial"),
-            x=0.5,
-            xanchor='center',
-            pad=dict(b=20)
-        ),
-        xaxis=dict(
-            title="Predicted Label",
-            titlefont=dict(size=14, color='#666666'),
-            tickmode='array',
-            tickvals=x_indices,
-            ticktext=x_labels,
-            tickfont=dict(size=13, color='#333333'),
-            side='bottom'
-        ),
-        yaxis=dict(
-            title="True Label",
-            titlefont=dict(size=14, color='#666666'),
-            tickmode='array',
-            tickvals=y_indices,
-            ticktext=y_labels,
-            tickfont=dict(size=13, color='#333333'),
-            autorange='reversed'  # Reverse y-axis so [0,0] is top-left
-        ),
+        title="Confusion Matrix",
+        xaxis_title="Predicted Label",
+        yaxis_title="True Label",
         template='plotly_white',
-        height=500,
-        width=600,
-        margin=dict(l=120, r=80, t=100, b=100),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        font=dict(family="Arial")
+        height=500
     )
     
     return fig
