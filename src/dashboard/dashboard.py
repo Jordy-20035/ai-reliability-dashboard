@@ -691,13 +691,244 @@ def show_live_predictions():
         st.warning("Please train a model first in the Model Training page.")
         return
     
+    if st.session_state.X_train is None:
+        st.warning("Please load a dataset first in the Data Explorer page.")
+        return
+    
+    # Get feature information from loaded dataset
+    X_sample = st.session_state.X_train
+    numerical_features = X_sample.select_dtypes(include=['int64', 'float64']).columns.tolist()
+    categorical_features = X_sample.select_dtypes(include=['object', 'category', 'bool']).columns.tolist()
+    
     st.markdown("Enter feature values to get a prediction:")
+    st.markdown("---")
     
-    # This is a simplified version - in production, you'd dynamically generate inputs
-    st.info("Feature input interface - To be customized based on your dataset")
+    # Create input form
+    input_data = {}
     
-    if st.button("Get Prediction"):
-        st.info("Prediction functionality - integrate with your trained model")
+    # Two columns for layout
+    col1, col2 = st.columns(2)
+    
+    # Numerical features in left column
+    with col1:
+        if numerical_features:
+            st.markdown("### Numerical Features")
+            for feature in numerical_features:
+                min_val = float(X_sample[feature].min()) if len(X_sample) > 0 else 0
+                max_val = float(X_sample[feature].max()) if len(X_sample) > 0 else 100
+                mean_val = float(X_sample[feature].mean()) if len(X_sample) > 0 else (min_val + max_val) / 2
+                
+                if feature in ['age', 'hours-per-week', 'fnlwgt', 'education-num', 'capital-gain', 'capital-loss']:
+                    # Use appropriate ranges for common features
+                    if feature == 'age':
+                        input_data[feature] = st.number_input(
+                            f"{feature.replace('_', ' ').title()}",
+                            min_value=18.0,
+                            max_value=100.0,
+                            value=float(mean_val),
+                            step=1.0,
+                            key=f"num_{feature}"
+                        )
+                    elif feature == 'hours-per-week':
+                        input_data[feature] = st.number_input(
+                            f"{feature.replace('_', ' ').title()}",
+                            min_value=1.0,
+                            max_value=100.0,
+                            value=float(mean_val),
+                            step=1.0,
+                            key=f"num_{feature}"
+                        )
+                    else:
+                        input_data[feature] = st.number_input(
+                            f"{feature.replace('_', ' ').title()}",
+                            min_value=min_val,
+                            max_value=max_val,
+                            value=float(mean_val),
+                            key=f"num_{feature}"
+                        )
+                else:
+                    input_data[feature] = st.number_input(
+                        f"{feature.replace('_', ' ').title()}",
+                        min_value=min_val,
+                        max_value=max_val,
+                        value=float(mean_val),
+                        key=f"num_{feature}"
+                    )
+    
+    # Categorical features in right column
+    with col2:
+        if categorical_features:
+            st.markdown("### Categorical Features")
+            for feature in categorical_features:
+                unique_values = sorted(X_sample[feature].dropna().unique().tolist())
+                if len(unique_values) > 0:
+                    default_idx = 0
+                    if len(unique_values) > 10:
+                        # For features with many categories, use text input with suggestions
+                        input_data[feature] = st.selectbox(
+                            f"{feature.replace('_', ' ').title()}",
+                            options=unique_values,
+                            index=default_idx,
+                            key=f"cat_{feature}"
+                        )
+                    else:
+                        input_data[feature] = st.selectbox(
+                            f"{feature.replace('_', ' ').title()}",
+                            options=unique_values,
+                            index=default_idx,
+                            key=f"cat_{feature}"
+                        )
+    
+    st.markdown("---")
+    
+    # Quick fill buttons
+    st.markdown("**Quick Actions:**")
+    col_btn1, col_btn2 = st.columns(2)
+    
+    with col_btn1:
+        use_sample = st.button("📋 Load Sample from Dataset", help="Fill form with a random sample from the dataset")
+    
+    with col_btn2:
+        show_sample_data = st.button("👁️ Show Sample Row", help="Display a sample row without filling the form")
+    
+    # Handle sample data loading
+    if use_sample:
+        if len(X_sample) > 0:
+            sample_row = X_sample.sample(1, random_state=42).iloc[0]
+            for feature in numerical_features:
+                st.session_state[f"num_{feature}"] = float(sample_row[feature])
+            for feature in categorical_features:
+                st.session_state[f"cat_{feature}"] = sample_row[feature]
+            st.success("Sample data loaded! Scroll up to see the filled form.")
+            st.rerun()
+    
+    # Show sample data
+    if show_sample_data:
+        if len(X_sample) > 0:
+            sample_row = X_sample.sample(1, random_state=42).iloc[0]
+            st.markdown("#### Sample Row from Dataset:")
+            st.dataframe(sample_row.to_frame().T)
+    
+    st.markdown("---")
+    
+    # Make prediction button
+    if st.button("🔮 Get Prediction", type="primary", use_container_width=True):
+        with st.spinner("Making prediction..."):
+            try:
+                # Create DataFrame from input
+                input_df = pd.DataFrame([input_data])
+                
+                # Ensure all columns are present and in correct order
+                missing_cols = set(X_sample.columns) - set(input_df.columns)
+                if missing_cols:
+                    # Fill missing columns with default values
+                    for col in missing_cols:
+                        if col in numerical_features:
+                            input_df[col] = X_sample[col].mean()
+                        else:
+                            input_df[col] = X_sample[col].mode()[0] if len(X_sample[col].mode()) > 0 else X_sample[col].iloc[0]
+                
+                # Reorder columns to match training data
+                input_df = input_df[X_sample.columns]
+                
+                # Preprocess input
+                if st.session_state.preprocessor is not None:
+                    input_processed = st.session_state.preprocessor.transform(input_df)
+                else:
+                    input_processed = input_df
+                
+                # Make prediction
+                model = st.session_state.model
+                prediction = model.predict(input_processed)[0]
+                
+                # Get prediction probability if available
+                if hasattr(model, 'predict_proba'):
+                    probabilities = model.predict_proba(input_processed)[0]
+                    prob_class_0 = probabilities[0]
+                    prob_class_1 = probabilities[1]
+                else:
+                    prob_class_0 = None
+                    prob_class_1 = None
+                
+                # Display results
+                st.markdown("### 🎯 Prediction Results")
+                
+                # Determine class labels based on dataset
+                if st.session_state.y_train is not None:
+                    unique_labels = sorted(st.session_state.y_train.unique())
+                    class_names = {0: "Class 0", 1: "Class 1"}
+                    if len(unique_labels) == 2:
+                        # Try to infer class names from the problem
+                        if 'adult' in str(X_sample.columns).lower() or any('income' in str(col).lower() for col in X_sample.columns):
+                            class_names = {0: "Income ≤50K", 1: "Income >50K"}
+                        elif 'compas' in str(X_sample.columns).lower() or any('recid' in str(col).lower() for col in X_sample.columns):
+                            class_names = {0: "No Recidivism", 1: "Recidivism"}
+                else:
+                    class_names = {0: "Class 0", 1: "Class 1"}
+                
+                pred_class_name = class_names.get(prediction, f"Class {prediction}")
+                
+                # Display prediction
+                col_res1, col_res2 = st.columns(2)
+                
+                with col_res1:
+                    st.markdown(f"**Predicted Class:**")
+                    if prediction == 1:
+                        st.success(f"🔵 **{pred_class_name}**")
+                    else:
+                        st.info(f"⚪ **{pred_class_name}**")
+                
+                with col_res2:
+                    if prob_class_0 is not None and prob_class_1 is not None:
+                        st.markdown(f"**Confidence:**")
+                        pred_prob = prob_class_1 if prediction == 1 else prob_class_0
+                        st.metric("Prediction Probability", f"{pred_prob:.2%}")
+                
+                # Show probabilities
+                if prob_class_0 is not None and prob_class_1 is not None:
+                    st.markdown("#### Probability Distribution")
+                    
+                    prob_df = pd.DataFrame({
+                        'Class': [class_names[0], class_names[1]],
+                        'Probability': [prob_class_0, prob_class_1]
+                    })
+                    
+                    # Create bar chart
+                    import plotly.express as px
+                    fig = px.bar(
+                        prob_df,
+                        x='Class',
+                        y='Probability',
+                        color='Probability',
+                        color_continuous_scale='Blues',
+                        text='Probability'
+                    )
+                    fig.update_traces(texttemplate='%{text:.2%}', textposition='outside')
+                    fig.update_layout(
+                        title="Prediction Probabilities",
+                        xaxis_title="Class",
+                        yaxis_title="Probability",
+                        yaxis=dict(range=[0, 1]),
+                        height=400
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Show probability values
+                    col_prob1, col_prob2 = st.columns(2)
+                    with col_prob1:
+                        st.metric(class_names[0], f"{prob_class_0:.2%}")
+                    with col_prob2:
+                        st.metric(class_names[1], f"{prob_class_1:.2%}")
+                
+                # Show input summary
+                with st.expander("📋 View Input Summary"):
+                    st.dataframe(input_df.T.rename(columns={0: "Value"}))
+                    
+            except Exception as e:
+                st.error(f"Error making prediction: {e}")
+                logger.error(f"Prediction error: {e}", exc_info=True)
+                with st.expander("Error Details"):
+                    st.exception(e)
 
 
 if __name__ == "__main__":
