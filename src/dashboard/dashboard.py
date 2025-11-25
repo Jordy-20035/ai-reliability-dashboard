@@ -110,6 +110,8 @@ def load_model_and_data():
         st.session_state.alert_manager = AlertManager()
     if 'baseline_metrics' not in st.session_state:
         st.session_state.baseline_metrics = None
+    if 'training_metrics' not in st.session_state:
+        st.session_state.training_metrics = None
 
 
 def display_alerts(alert_manager: AlertManager, show_all: bool = False):
@@ -346,6 +348,9 @@ def show_model_training():
                 # Evaluate
                 metrics = evaluate_model(model, X_test, st.session_state.y_test)
                 
+                # Store metrics in session state for persistence
+                st.session_state.training_metrics = metrics
+                
                 st.success("Model trained successfully!")
                 
                 # Display metrics
@@ -364,13 +369,33 @@ def show_model_training():
                 if 'roc_auc' in metrics:
                     st.metric("ROC AUC", f"{metrics['roc_auc']:.4f}")
                 
-                # Confusion matrix
+                # Confusion matrix - with detailed debugging
                 st.markdown("### Confusion Matrix")
-                if 'confusion_matrix' in metrics and metrics['confusion_matrix'] is not None:
-                    fig = plot_confusion_matrix(metrics['confusion_matrix'])
-                    st.plotly_chart(fig, use_container_width=True)
+                
+                # Check if confusion matrix exists and is valid
+                if 'confusion_matrix' not in metrics:
+                    st.error("❌ Confusion matrix key not found in metrics dictionary!")
+                    st.json({k: type(v).__name__ for k, v in metrics.items()})
+                elif metrics['confusion_matrix'] is None:
+                    st.error("❌ Confusion matrix is None!")
                 else:
-                    st.warning("Confusion matrix not available. Model may need to be re-evaluated.")
+                    cm = metrics['confusion_matrix']
+                    # Debug info
+                    with st.expander("Debug: Confusion Matrix Info"):
+                        st.write(f"Type: {type(cm)}")
+                        st.write(f"Shape: {getattr(cm, 'shape', 'N/A')}")
+                        st.write(f"Size: {getattr(cm, 'size', len(cm) if hasattr(cm, '__len__') else 'N/A')}")
+                        st.write(f"Value: {cm}")
+                        st.write(f"Is numpy array: {isinstance(cm, np.ndarray)}")
+                    
+                    # Validate and plot
+                    try:
+                        fig = plot_confusion_matrix(cm)
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as e:
+                        st.error(f"Error plotting confusion matrix: {e}")
+                        st.write("Raw confusion matrix:")
+                        st.write(cm)
                 
             except Exception as e:
                 st.error(f"Error training model: {e}")
