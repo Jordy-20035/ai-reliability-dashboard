@@ -67,19 +67,11 @@ def plot_confusion_matrix(
     Returns:
         Plotly figure
     """
-    # Ensure it's a numpy array
-    cm = np.array(confusion_matrix)
-    
-    # Create labels for axes
-    x_labels = labels if len(labels) >= cm.shape[1] else ['Negative', 'Positive']
-    y_labels = labels if len(labels) >= cm.shape[0] else ['Negative', 'Positive']
-    
-    # Simple heatmap
     fig = go.Figure(data=go.Heatmap(
-        z=cm,
-        x=x_labels,
-        y=y_labels,
-        text=cm,
+        z=confusion_matrix,
+        x=labels,
+        y=labels,
+        text=confusion_matrix,
         texttemplate='%{text}',
         textfont={"size": 16},
         colorscale='Blues',

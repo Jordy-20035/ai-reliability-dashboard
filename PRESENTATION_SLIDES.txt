@@ -1,0 +1,523 @@
+================================================================================
+PRESENTATION: Trustworthy AI Monitor - Intermediate Meeting
+Date: November 25, 2024
+Master's Thesis Research
+================================================================================
+
+SLIDE 1: Title Slide
+--------------------------------------------------------------------------------
+Automated MLOps System for Monitoring ML Model Reliability and Fairness
+
+Master's Thesis Research
+Intermediate Presentation
+November 25, 2024
+
+Student: [Your Name]
+Supervisor: [Supervisor Name]
+
+
+SLIDE 2: Agenda
+--------------------------------------------------------------------------------
+1. Problem Description
+2. Existing Solutions and Technologies
+3. Data Description
+4. Progress Update
+5. Next Steps
+
+
+SLIDE 3: Problem Description - Overview
+--------------------------------------------------------------------------------
+Modern AI models face critical challenges after deployment:
+
+• Model Performance Degradation
+  - Accuracy decreases over time
+  - Metrics drift away from training performance
+  - Production models become unreliable
+
+• Data Drift
+  - Input data distribution changes
+  - Feature distributions shift
+  - Model becomes misaligned with reality
+
+• Fairness and Bias Issues
+  - Unequal predictions across demographic groups
+  - Legal and ethical concerns
+  - Discrimination in automated decisions
+
+
+SLIDE 4: Problem Description - Real-World Impact
+--------------------------------------------------------------------------------
+Why This Problem Matters:
+
+Financial Impact:
+- Degraded models → poor business decisions
+- Biased models → legal liability
+- System failures → revenue loss
+
+Ethical Impact:
+- Unfair outcomes for vulnerable groups
+- Discrimination in hiring, lending, justice
+- Loss of public trust in AI systems
+
+Technical Impact:
+- Need for constant manual monitoring
+- Difficult to detect issues early
+- Limited tools for comprehensive monitoring
+
+
+SLIDE 5: Problem Description - Research Questions
+--------------------------------------------------------------------------------
+Research Questions:
+
+1. How can we automatically detect when ML models lose accuracy in production?
+
+2. What methods effectively detect data drift before model performance degrades?
+
+3. How can we ensure models maintain fairness across demographic groups?
+
+4. Can we build a unified system that monitors all these aspects efficiently?
+
+
+SLIDE 6: Existing Solutions - Overview
+--------------------------------------------------------------------------------
+Current State of MLOps Monitoring Tools:
+
+Category 1: General MLOps Platforms
+• MLflow - Experiment tracking, model registry
+• Weights & Biases - Experiment tracking
+• Kubeflow - Kubernetes-based ML workflows
+
+Category 2: Drift Detection Tools
+• Evidently AI - Open-source drift detection
+• Alibi Detect - Adversarial and drift detection
+• NannyML - Post-deployment data science
+
+Category 3: Fairness Tools
+• Fairlearn - Fairness assessment and mitigation
+• AIF360 - IBM's fairness toolkit
+• What-If Tool - Google's fairness analysis
+
+
+SLIDE 7: Existing Solutions - Limitations
+--------------------------------------------------------------------------------
+Gaps in Current Solutions:
+
+Limitations:
+• Fragmented Tools
+  - Different tools for drift, fairness, performance
+  - No unified platform
+  - Difficult integration
+
+• Resource Requirements
+  - Many tools require GPU or heavy infrastructure
+  - Not accessible for CPU-only environments
+  - High computational costs
+
+• Limited Real-Time Alerting
+  - Most tools focus on batch analysis
+  - Limited real-time monitoring capabilities
+  - Manual alert configuration
+
+• Complexity
+  - Steep learning curves
+  - Complex setup and configuration
+  - Require dedicated DevOps support
+
+
+SLIDE 8: Existing Solutions - Technology Comparison
+--------------------------------------------------------------------------------
+Key Technologies Used in Existing Solutions:
+
+Drift Detection Methods:
+• Statistical Tests (KS, Chi-Square, PSI)
+• Distribution Distance Metrics (Wasserstein)
+• Machine Learning-based Drift Detectors
+
+Performance Monitoring:
+• Time-series tracking of metrics
+• Baseline comparisons
+• Threshold-based alerting
+
+Fairness Metrics:
+• Demographic Parity
+• Equal Opportunity
+• Disparate Impact Ratio
+
+
+SLIDE 9: Our Approach - Proposed Solution
+--------------------------------------------------------------------------------
+Trustworthy AI Monitor - Integrated System:
+
+Unified Platform:
+• Single system for all monitoring aspects
+• Consistent API and dashboard
+• Real-time alerting
+
+CPU-Optimized:
+• Runs efficiently on standard hardware
+• No GPU requirements
+• Energy-efficient
+
+Comprehensive Monitoring:
+• Performance degradation detection
+• Data drift detection (multiple methods)
+• Fairness analysis across groups
+• Real-time visualizations and alerts
+
+
+SLIDE 10: Data Description - Datasets Overview
+--------------------------------------------------------------------------------
+Datasets for Research Validation:
+
+Dataset 1: Adult Income (UCI Machine Learning Repository)
+• Size: ~48,000 records
+• Task: Binary classification (income >50K or ≤50K)
+• Features: 14 features (age, education, occupation, etc.)
+• Demographics: Gender, race information available
+• Use Case: Primary dataset for model training and fairness analysis
+
+Dataset 2: COMPAS
+• Size: ~7,000 records
+• Task: Recidivism prediction
+• Features: Demographics, criminal history, risk scores
+• Known Issues: Well-documented bias concerns
+• Use Case: Fairness analysis and bias detection validation
+
+Dataset 3: Synthetic Data
+• Generated: Configurable size and complexity
+• Task: Controlled drift simulation
+• Features: Customizable with demographic attributes
+• Use Case: Drift detection method validation
+
+
+SLIDE 11: Data Description - Adult Income Dataset
+--------------------------------------------------------------------------------
+Adult Income Dataset Details:
+
+Source: UCI Machine Learning Repository (OpenML)
+Download: Automatic via OpenML API
+Storage: Cached locally in data/raw/adult.pkl
+
+Structure:
+• Training Set: ~39,000 samples (80%)
+• Test Set: ~9,700 samples (20%)
+• Features: 14 attributes
+  - Numerical: age, fnlwgt, education-num, hours-per-week, etc.
+  - Categorical: workclass, education, occupation, race, sex, etc.
+
+Target Variable:
+• Binary classification: income >50K (1) or ≤50K (0)
+• Class distribution: ~76% ≤50K, ~24% >50K (imbalanced)
+
+Demographic Attributes Available:
+• Sex: Male, Female
+• Race: White, Black, Asian, etc.
+• Enables fairness analysis across groups
+
+
+SLIDE 12: Data Description - COMPAS Dataset
+--------------------------------------------------------------------------------
+COMPAS Dataset Details:
+
+Source: ProPublica (Publicly available research data)
+Download: Manual download from GitHub repository
+Storage: data/raw/compas-scores-two-years.csv
+
+Structure:
+• Records: ~7,000 individuals
+• Features: Age, race, gender, criminal history, risk scores
+• Target: Two-year recidivism (yes/no)
+
+Key Attributes:
+• Demographics: Race, gender, age categories
+• Risk Assessment: COMPAS scores (decile scores)
+• Outcomes: Recidivism within 2 years
+
+Research Significance:
+• Widely used for fairness research
+• Known bias issues documented
+• Ideal for validating fairness metrics
+• Reproduces ProPublica's analysis results
+
+
+SLIDE 13: Data Description - Synthetic Data
+--------------------------------------------------------------------------------
+Synthetic Data Generation:
+
+Purpose: Controlled experiments for drift detection validation
+
+Generation Method:
+• sklearn.datasets.make_classification
+• Configurable parameters:
+  - Number of samples (default: 10,000)
+  - Number of features (default: 10)
+  - Informative vs redundant features
+  - Class imbalance control
+
+Demographic Features:
+• Age: Random distribution (18-80)
+• Gender: Binary (Male, Female)
+• Race: Multiple categories
+• Enables fairness testing without privacy concerns
+
+Use Cases:
+• Drift intensity experiments (controlled drift)
+• Method comparison (same conditions)
+• Reproducible research (fixed random seeds)
+
+
+SLIDE 14: Data Description - Data Pipeline
+--------------------------------------------------------------------------------
+Data Processing Pipeline:
+
+Step 1: Data Loading
+• Automatic download (Adult Income via OpenML)
+• Manual placement (COMPAS CSV file)
+• Synthetic generation on-demand
+
+Step 2: Preprocessing
+• Handle missing values
+• Encode categorical features (One-Hot Encoding)
+• Normalize numerical features (StandardScaler)
+• Split train/test (80/20)
+
+Step 3: Storage
+• Raw data: data/raw/
+• Processed data: data/processed/
+• Synthetic data: Generated in-memory or saved
+
+Step 4: Model Training
+• Train on processed training set
+• Evaluate on test set
+• Save models and preprocessors
+
+
+SLIDE 15: Progress Update - Implementation Status
+--------------------------------------------------------------------------------
+Completed Work:
+
+✓ Core Architecture
+  - Modular Python package structure
+  - Data loading and preprocessing pipeline
+  - Model training framework
+
+✓ Monitoring Modules
+  - Performance monitoring (accuracy, F1, latency)
+  - Drift detection (PSI, KS-test, Chi-square, Wasserstein)
+  - Fairness metrics (Demographic Parity, Equal Opportunity)
+
+✓ User Interface
+  - Streamlit dashboard with visualizations
+  - FastAPI backend for programmatic access
+  - Real-time alert system
+
+✓ Dataset Integration
+  - Adult Income dataset loader (working)
+  - COMPAS dataset structure ready
+  - Synthetic data generator implemented
+
+
+SLIDE 16: Progress Update - Current Capabilities
+--------------------------------------------------------------------------------
+System Capabilities (Demonstrated):
+
+Model Training:
+• Multiple algorithms: XGBoost, Random Forest, Logistic Regression
+• Automated preprocessing pipeline
+• Model persistence and loading
+
+Performance Monitoring:
+• Comprehensive metrics (accuracy, precision, recall, F1, ROC-AUC)
+• Latency measurement (mean, p95, p99)
+• Degradation detection with baseline comparison
+
+Drift Detection:
+• Multiple statistical methods
+• Per-feature drift analysis
+• Visual drift score reporting
+
+Fairness Analysis:
+• Group-wise performance metrics
+• Multiple fairness criteria
+• Violation detection and alerting
+
+
+SLIDE 17: Progress Update - Working Example
+--------------------------------------------------------------------------------
+Demonstrated Results:
+
+Model Performance (Adult Income Dataset):
+• Accuracy: 87.45%
+• F1 Score: 70.89%
+• ROC AUC: 92.90%
+
+System Functionality:
+• Dashboard operational at localhost:8501
+• API endpoints available
+• Alert system functional
+• All monitoring modules working
+
+Generated Artifacts:
+• Trained model: models/trained_model.pkl
+• Preprocessing pipeline: models/preprocessor.pkl
+• Results: results/first_model_results.csv
+
+
+SLIDE 18: Next Steps - Immediate (Before Next Meeting)
+--------------------------------------------------------------------------------
+Planned Work (Next 2-3 Weeks):
+
+1. Complete Chapter 1 Draft
+   - Finalize problem description section
+   - Complete technology comparison section
+   - Write solution concept in detail
+
+2. Conduct Initial Experiments
+   - Compare drift detection methods
+   - Validate fairness metrics on COMPAS
+   - Benchmark performance monitoring
+
+3. Article Preparation
+   - Draft article based on Chapter 1
+   - Literature review section
+   - Methodology overview
+
+4. Code Refinement
+   - Add remaining datasets (COMPAS)
+   - Optimize performance
+   - Expand test coverage
+
+
+SLIDE 19: Next Steps - Research Plan
+--------------------------------------------------------------------------------
+Research Roadmap:
+
+Phase 1: Baseline Experiments (Current - December)
+• Validate all monitoring methods
+• Establish performance benchmarks
+• Compare with existing solutions
+
+Phase 2: Advanced Experiments (January - February)
+• Long-term drift simulation
+• Fairness mitigation techniques
+• Energy efficiency analysis
+
+Phase 3: Integration and Deployment (March)
+• Production-ready features
+• Comprehensive testing
+• Documentation completion
+
+Phase 4: Thesis Writing (April - May)
+• Complete all chapters
+• Finalize results and conclusions
+• Defense preparation
+
+
+SLIDE 20: Challenges and Solutions
+--------------------------------------------------------------------------------
+Current Challenges:
+
+Challenge 1: Dataset Availability
+• COMPAS requires manual download
+• Solution: Provide clear download instructions
+
+Challenge 2: Integration Complexity
+• Multiple monitoring aspects to integrate
+• Solution: Modular architecture allows incremental development
+
+Challenge 3: Fairness Evaluation
+• Need real demographic data for meaningful analysis
+• Solution: Using Adult Income (has demographics) and COMPAS
+
+Challenge 4: Time Management
+• Balancing implementation and documentation
+• Solution: Prioritizing working prototype first, documentation parallel
+
+
+SLIDE 21: Research Contribution
+--------------------------------------------------------------------------------
+Expected Scientific Contribution:
+
+1. Integrated Platform
+   - Unified system for reliability and fairness monitoring
+   - CPU-efficient implementation
+   - Accessible for resource-constrained environments
+
+2. Method Comparison
+   - Comparative analysis of drift detection methods
+   - Fairness metric evaluation
+   - Performance benchmark results
+
+3. Practical Tool
+   - Open-source implementation
+   - Ready-to-use monitoring system
+   - Real-time alerting capabilities
+
+
+SLIDE 22: Timeline Compliance
+--------------------------------------------------------------------------------
+Current Status vs. Timeline:
+
+✓ On Track for Chapter 1 Draft
+  - Problem description: Complete
+  - Existing solutions: In progress
+  - Data description: Complete
+  - Technology analysis: In progress
+  - Solution concept: Drafted
+
+✓ Intermediate Meeting Preparation
+  - Presentation ready
+  - First 3 points prepared
+  - Demonstration ready
+
+⏳ Upcoming Milestones
+  - Chapter 1 draft: By mid-December
+  - Article draft: By mid-December
+
+
+SLIDE 23: Questions for Discussion
+--------------------------------------------------------------------------------
+Topics for Feedback:
+
+1. Technology Analysis
+   - Which existing tools should we compare in detail?
+   - Any additional metrics we should include?
+
+2. Dataset Selection
+   - Are Adult Income and COMPAS sufficient?
+   - Should we add more datasets?
+
+3. Research Direction
+   - Priority areas for experiments?
+   - Any specific aspects to emphasize?
+
+4. Timeline Adjustments
+   - Any concerns about current pace?
+   - Suggestions for reprioritization?
+
+
+SLIDE 24: Conclusion
+--------------------------------------------------------------------------------
+Summary:
+
+✓ Problem clearly defined and documented
+✓ Existing solutions analyzed
+✓ Data sources identified and integrated
+✓ Working prototype demonstrated
+✓ Research direction validated
+
+Next Steps:
+• Complete Chapter 1 draft
+• Conduct initial experiments
+• Prepare article draft
+• Continue system development
+
+Thank you for your attention!
+
+Questions?
+
+
+================================================================================
+END OF PRESENTATION
+================================================================================
+

@@ -42,159 +42,51 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS - White background with blue accents
+# Custom CSS
 st.markdown("""
 <style>
-    /* Main background - White */
-    .main {
-        background-color: #ffffff;
-    }
-    .stApp {
-        background-color: #ffffff;
-    }
-    
-    /* Header styling - Blue accent */
     .main-header {
         font-size: 2.5rem;
-        font-weight: 700;
-        color: #0066cc;
-        margin-bottom: 0.5rem;
-        letter-spacing: -0.5px;
+        font-weight: bold;
+        color: #1f77b4;
     }
-    
     .sub-header {
-        font-size: 1.75rem;
-        font-weight: 600;
-        color: #003366;
-        margin-top: 1.5rem;
-        margin-bottom: 1rem;
-        border-bottom: 2px solid #0066cc;
-        padding-bottom: 0.5rem;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-top: 1rem;
     }
-    
-    /* Sidebar styling - Modern nav */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0066cc 0%, #004499 100%);
-    }
-    
-    [data-testid="stSidebar"] .css-1d391kg {
-        padding-top: 3rem;
-    }
-    
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-        color: #ffffff !important;
-    }
-    
-    /* Radio buttons styling for nav */
-    [data-testid="stSidebar"] label {
-        color: #ffffff;
-        font-weight: 500;
-        padding: 0.75rem 1rem;
-        border-radius: 6px;
-        margin: 0.25rem 0;
-        transition: all 0.3s ease;
-    }
-    
-    [data-testid="stSidebar"] label:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        cursor: pointer;
-    }
-    
-    [data-testid="stSidebar"] [role="radiogroup"] label[aria-checked="true"] {
-        background-color: rgba(255, 255, 255, 0.2);
-        color: #ffffff;
-        font-weight: 600;
-    }
-    
-    /* Metric cards */
     .metric-card {
-        padding: 1.5rem;
-        border-radius: 8px;
-        background-color: #f8f9fa;
-        border: 1px solid #e0e0e0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #f0f2f6;
     }
-    
-    /* Alerts styling */
     .alert-critical {
-        padding: 1rem 1.25rem;
-        border-radius: 8px;
-        background-color: #fff5f5;
-        border-left: 4px solid #dc3545;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #fee;
+        border-left: 5px solid #dc3545;
         margin-bottom: 1rem;
-        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.1);
     }
-    
     .alert-warning {
-        padding: 1rem 1.25rem;
-        border-radius: 8px;
-        background-color: #fffbf0;
-        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #fff3cd;
+        border-left: 5px solid #ffc107;
         margin-bottom: 1rem;
-        box-shadow: 0 2px 4px rgba(255, 193, 7, 0.1);
     }
-    
     .alert-info {
-        padding: 1rem 1.25rem;
-        border-radius: 8px;
-        background-color: #f0f7ff;
-        border-left: 4px solid #0066cc;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #d1ecf1;
+        border-left: 5px solid #17a2b8;
         margin-bottom: 1rem;
-        box-shadow: 0 2px 4px rgba(0, 102, 204, 0.1);
     }
-    
     .alert-success {
-        padding: 1rem 1.25rem;
-        border-radius: 8px;
-        background-color: #f0fff4;
-        border-left: 4px solid #28a745;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #d4edda;
+        border-left: 5px solid #28a745;
         margin-bottom: 1rem;
-        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
-    }
-    
-    /* Buttons - Blue accent */
-    .stButton > button {
-        background-color: #0066cc;
-        color: white;
-        border-radius: 6px;
-        border: none;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton > button:hover {
-        background-color: #0052a3;
-        box-shadow: 0 4px 8px rgba(0, 102, 204, 0.2);
-    }
-    
-    /* Selectbox and other inputs */
-    .stSelectbox > div > div {
-        background-color: white;
-        border: 1px solid #cccccc;
-        border-radius: 6px;
-    }
-    
-    /* Dataframe styling */
-    .dataframe {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    
-    /* Metrics styling */
-    [data-testid="stMetricValue"] {
-        color: #003366;
-        font-weight: 600;
-    }
-    
-    [data-testid="stMetricLabel"] {
-        color: #666666;
-    }
-    
-    /* Divider */
-    hr {
-        border-top: 1px solid #e0e0e0;
-        margin: 2rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -227,9 +119,9 @@ def display_alerts(alert_manager: AlertManager, show_all: bool = False):
     if not alerts:
         return
     
-    # Filter alerts based on show_all - show only warnings and critical if not show_all
+    # Filter alerts based on show_all
     if not show_all:
-        alerts = [a for a in alerts if a.severity in [AlertSeverity.WARNING, AlertSeverity.CRITICAL]]
+        alerts = alert_manager.get_warning_alerts()
     
     if not alerts:
         return
@@ -269,47 +161,20 @@ def main():
     # Initialize session state
     load_model_and_data()
     
-    # Sidebar Navigation - Modern design
-    with st.sidebar:
-        st.markdown("""
-        <div style="text-align: center; padding: 1rem 0 2rem 0;">
-            <h1 style="color: #ffffff; font-size: 1.8rem; margin: 0;">🔍 AI Monitor</h1>
-            <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin: 0.5rem 0 0 0;">
-                Trustworthy AI Dashboard
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("---")
-        st.markdown("### 🧭 Navigation")
-        
-        # Navigation menu with icons
-        nav_options = {
-            "Home": "🏠",
-            "Data Explorer": "📂",
-            "Model Training": "🤖",
-            "Performance Monitoring": "📈",
-            "Drift Detection": "🌊",
-            "Fairness Analysis": "⚖️",
-            "Live Predictions": "🔮"
-        }
-        
-        # Create radio buttons with icons
-        selected = st.radio(
-            "Pages",
-            options=list(nav_options.keys()),
-            label_visibility="collapsed",
-            format_func=lambda x: f"{nav_options[x]} {x}"
-        )
-        page = selected
-    
-    # Main content area
     # Header
     st.markdown('<p class="main-header">🔍 Trustworthy AI Monitor</p>', unsafe_allow_html=True)
-    st.markdown('<p style="color: #666666; font-size: 1.1rem; margin-bottom: 2rem;">Automated MLOps System for Model Reliability and Fairness</p>', unsafe_allow_html=True)
+    st.markdown("**Automated MLOps System for Model Reliability and Fairness**")
     
     # Display alerts at the top
     display_alerts(st.session_state.alert_manager, show_all=False)
+    
+    # Sidebar
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio(
+        "Select Page",
+        ["Home", "Data Explorer", "Model Training", "Performance Monitoring", 
+         "Drift Detection", "Fairness Analysis", "Live Predictions"]
+    )
     
     # Alert summary in sidebar
     alert_summary = st.session_state.alert_manager.get_alerts_summary()
@@ -392,18 +257,8 @@ def show_data_explorer():
     # Dataset selection
     dataset_name = st.selectbox(
         "Select Dataset",
-        ["adult", "compas", "synthetic"]
+        ["adult", "synthetic"]
     )
-    
-    # Show info about COMPAS if selected
-    if dataset_name == "compas":
-        compas_path = config.data.raw_data_dir / "compas-scores-two-years.csv"
-        if not compas_path.exists():
-            st.warning(
-                f"⚠️ COMPAS dataset not found at: {compas_path}\n\n"
-                "Please download from: https://github.com/propublica/compas-analysis\n"
-                "Save as: `data/raw/compas-scores-two-years.csv`"
-            )
     
     if st.button("Load Dataset"):
         with st.spinner("Loading dataset..."):
@@ -452,53 +307,6 @@ def show_model_training():
         st.warning("Please load a dataset first in the Data Explorer page.")
         return
     
-    # Show previously trained metrics if available
-    if 'training_metrics' in st.session_state and st.session_state.training_metrics is not None:
-        st.info("📊 Showing results from previous training. Train a new model to update.")
-        metrics = st.session_state.training_metrics
-        
-        st.markdown("### Previous Training Results")
-        
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Accuracy", f"{metrics['accuracy']:.4f}")
-        with col2:
-            st.metric("Precision", f"{metrics['precision']:.4f}")
-        with col3:
-            st.metric("Recall", f"{metrics['recall']:.4f}")
-        with col4:
-            st.metric("F1 Score", f"{metrics['f1']:.4f}")
-        
-        if 'roc_auc' in metrics:
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("ROC AUC", f"{metrics['roc_auc']:.4f}")
-            with col2:
-                if 'pr_auc' in metrics:
-                    st.metric("PR AUC", f"{metrics['pr_auc']:.4f}")
-        
-        # Show confusion matrix
-        st.markdown("### Confusion Matrix")
-        try:
-            if 'confusion_matrix' in metrics and metrics['confusion_matrix'] is not None:
-                cm = metrics['confusion_matrix']
-                if not isinstance(cm, np.ndarray):
-                    cm = np.array(cm)
-                fig = plot_confusion_matrix(cm)
-                st.plotly_chart(fig, use_container_width=True)
-                
-                st.markdown("#### Confusion Matrix Values")
-                cm_df = pd.DataFrame(
-                    cm,
-                    index=['Actual Negative', 'Actual Positive'],
-                    columns=['Predicted Negative', 'Predicted Positive']
-                )
-                st.dataframe(cm_df, use_container_width=True)
-        except Exception as e:
-            st.warning(f"Could not display confusion matrix: {e}")
-        
-        st.markdown("---")
-    
     # Model configuration
     col1, col2 = st.columns(2)
     
@@ -531,9 +339,6 @@ def show_model_training():
                 # Evaluate
                 metrics = evaluate_model(model, X_test, st.session_state.y_test)
                 
-                # Store metrics in session state for persistence
-                st.session_state.training_metrics = metrics
-                
                 st.success("Model trained successfully!")
                 
                 # Display metrics
@@ -550,75 +355,15 @@ def show_model_training():
                     st.metric("F1 Score", f"{metrics['f1']:.4f}")
                 
                 if 'roc_auc' in metrics:
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("ROC AUC", f"{metrics['roc_auc']:.4f}")
-                    with col2:
-                        if 'pr_auc' in metrics:
-                            st.metric("PR AUC", f"{metrics['pr_auc']:.4f}")
+                    st.metric("ROC AUC", f"{metrics['roc_auc']:.4f}")
                 
                 # Confusion matrix
                 st.markdown("### Confusion Matrix")
-                try:
-                    if 'confusion_matrix' in metrics and metrics['confusion_matrix'] is not None:
-                        cm = metrics['confusion_matrix']
-                        # Ensure it's a numpy array
-                        if not isinstance(cm, np.ndarray):
-                            cm = np.array(cm)
-                        
-                        # Debug: Show raw confusion matrix
-                        logger.debug(f"Confusion matrix shape: {cm.shape}, values: {cm}")
-                        
-                        # Ensure 2D array
-                        if cm.ndim == 1:
-                            # If 1D, reshape to 2D
-                            size = int(np.sqrt(len(cm)))
-                            cm = cm.reshape(size, size)
-                        elif cm.ndim > 2:
-                            cm = cm.reshape(cm.shape[-2], cm.shape[-1])
-                        
-                        # Create and display the plot with proper labels
-                        labels = ['Negative', 'Positive']
-                        if cm.shape[0] == 2 and cm.shape[1] == 2:
-                            fig = plot_confusion_matrix(cm, labels=labels)
-                        else:
-                            fig = plot_confusion_matrix(cm)
-                        
-                        st.plotly_chart(fig, use_container_width=True)
-                        
-                        # Also show as a table for clarity
-                        st.markdown("#### Confusion Matrix Values")
-                        if cm.shape[0] == 2 and cm.shape[1] == 2:
-                            cm_df = pd.DataFrame(
-                                cm,
-                                index=['Actual Negative', 'Actual Positive'],
-                                columns=['Predicted Negative', 'Predicted Positive']
-                            )
-                        else:
-                            cm_df = pd.DataFrame(cm)
-                        st.dataframe(cm_df, use_container_width=True)
-                        
-                        # Show individual values
-                        st.markdown("#### Breakdown")
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.write(f"**True Negatives (TN):** {metrics.get('tn', int(cm[0, 0]))}")
-                            st.write(f"**False Positives (FP):** {metrics.get('fp', int(cm[0, 1]))}")
-                        with col2:
-                            st.write(f"**False Negatives (FN):** {metrics.get('fn', int(cm[1, 0]))}")
-                            st.write(f"**True Positives (TP):** {metrics.get('tp', int(cm[1, 1]))}")
-                    else:
-                        st.warning("⚠️ Confusion matrix not available in metrics. Available keys: " + ", ".join(metrics.keys()))
-                except Exception as cm_error:
-                    st.error(f"❌ Error displaying confusion matrix: {cm_error}")
-                    import traceback
-                    with st.expander("Show Error Details"):
-                        st.code(traceback.format_exc())
+                fig = plot_confusion_matrix(metrics['confusion_matrix'])
+                st.plotly_chart(fig, use_container_width=True)
                 
             except Exception as e:
                 st.error(f"Error training model: {e}")
-                import traceback
-                st.code(traceback.format_exc())
 
 
 def show_performance_monitoring():
