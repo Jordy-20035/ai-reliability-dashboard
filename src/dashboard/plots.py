@@ -67,11 +67,48 @@ def plot_confusion_matrix(
     Returns:
         Plotly figure
     """
+    # Validate confusion matrix
+    if confusion_matrix is None:
+        logger.warning("Confusion matrix is None")
+        confusion_matrix = np.array([[0, 0], [0, 0]])
+    
+    # Convert to numpy array if needed
+    cm = np.array(confusion_matrix)
+    
+    # Handle empty or invalid matrices
+    if cm.size == 0:
+        logger.warning("Empty confusion matrix provided")
+        cm = np.array([[0, 0], [0, 0]])
+    
+    # Ensure 2D array
+    if cm.ndim == 1:
+        # Try to reshape - if it's 4 elements, reshape to 2x2
+        if cm.size == 4:
+            cm = cm.reshape(2, 2)
+        else:
+            logger.warning(f"Unexpected confusion matrix shape: {cm.shape}, using zeros")
+            cm = np.array([[0, 0], [0, 0]])
+    
+    # Ensure it's at least 2x2
+    if cm.shape[0] < 2 or cm.shape[1] < 2:
+        logger.warning(f"Confusion matrix too small: {cm.shape}, padding to 2x2")
+        cm_padded = np.zeros((2, 2))
+        cm_padded[:cm.shape[0], :cm.shape[1]] = cm
+        cm = cm_padded
+    
+    # Trim to 2x2 if larger (for binary classification)
+    if cm.shape[0] > 2 or cm.shape[1] > 2:
+        cm = cm[:2, :2]
+    
+    # Ensure labels match matrix size
+    if len(labels) != cm.shape[0]:
+        labels = labels[:cm.shape[0]] if len(labels) > cm.shape[0] else labels + ['Class ' + str(i) for i in range(len(labels), cm.shape[0])]
+    
     fig = go.Figure(data=go.Heatmap(
-        z=confusion_matrix,
+        z=cm,
         x=labels,
         y=labels,
-        text=confusion_matrix,
+        text=cm,
         texttemplate='%{text}',
         textfont={"size": 16},
         colorscale='Blues',

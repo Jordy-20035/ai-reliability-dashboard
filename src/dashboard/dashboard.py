@@ -255,10 +255,17 @@ def show_data_explorer():
     st.markdown('<p class="sub-header">📂 Data Explorer</p>', unsafe_allow_html=True)
     
     # Dataset selection
+    available_datasets = ["adult", "compas", "synthetic"]
     dataset_name = st.selectbox(
         "Select Dataset",
-        ["adult", "synthetic"]
+        available_datasets
     )
+    
+    # Show info for COMPAS if selected
+    if dataset_name == "compas":
+        compas_file = config.data.raw_data_dir / "compas-scores-two-years.csv"
+        if not compas_file.exists():
+            st.warning(f"⚠️ COMPAS dataset not found at {compas_file}. Please download from: https://github.com/propublica/compas-analysis and place it in `data/raw/` directory.")
     
     if st.button("Load Dataset"):
         with st.spinner("Loading dataset..."):
@@ -359,8 +366,11 @@ def show_model_training():
                 
                 # Confusion matrix
                 st.markdown("### Confusion Matrix")
-                fig = plot_confusion_matrix(metrics['confusion_matrix'])
-                st.plotly_chart(fig, use_container_width=True)
+                if 'confusion_matrix' in metrics and metrics['confusion_matrix'] is not None:
+                    fig = plot_confusion_matrix(metrics['confusion_matrix'])
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning("Confusion matrix not available. Model may need to be re-evaluated.")
                 
             except Exception as e:
                 st.error(f"Error training model: {e}")
