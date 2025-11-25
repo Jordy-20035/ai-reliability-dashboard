@@ -1,523 +1,522 @@
 ================================================================================
-PRESENTATION: Trustworthy AI Monitor - Intermediate Meeting
-Date: November 25, 2024
-Master's Thesis Research
+ПРЕЗЕНТАЦИЯ: Trustworthy AI Monitor - Промежуточное совещание
+Дата: 25 ноября 2024
+Магистерская диссертация
 ================================================================================
 
-SLIDE 1: Title Slide
+СЛАЙД 1: Титульный слайд
 --------------------------------------------------------------------------------
-Automated MLOps System for Monitoring ML Model Reliability and Fairness
+Автоматизированная MLOps система для мониторинга надежности и справедливости ML-моделей
 
-Master's Thesis Research
-Intermediate Presentation
-November 25, 2024
+Магистерская диссертация
+Промежуточная презентация
+25 ноября 2024
 
-Student: [Your Name]
-Supervisor: [Supervisor Name]
+Студент: [Ваше имя]
+Научный руководитель: [Имя руководителя]
 
 
-SLIDE 2: Agenda
+СЛАЙД 2: План презентации
 --------------------------------------------------------------------------------
-1. Problem Description
-2. Existing Solutions and Technologies
-3. Data Description
-4. Progress Update
-5. Next Steps
+1. Описание проблемы
+2. Существующие решения и технологии
+3. Описание данных
+4. Обновление прогресса
+5. Следующие шаги
 
 
-SLIDE 3: Problem Description - Overview
+СЛАЙД 3: Описание проблемы - Обзор
 --------------------------------------------------------------------------------
-Modern AI models face critical challenges after deployment:
+Современные AI-модели сталкиваются с критическими вызовами после развертывания:
 
-• Model Performance Degradation
-  - Accuracy decreases over time
-  - Metrics drift away from training performance
-  - Production models become unreliable
+• Деградация производительности модели
+  - Точность снижается со временем
+  - Метрики отклоняются от показателей обучения
+  - Модели в продакшене становятся ненадежными
 
-• Data Drift
-  - Input data distribution changes
-  - Feature distributions shift
-  - Model becomes misaligned with reality
+• Дрифт данных
+  - Изменение распределения входных данных
+  - Смещение распределения признаков
+  - Модель расходится с реальностью
 
-• Fairness and Bias Issues
-  - Unequal predictions across demographic groups
-  - Legal and ethical concerns
-  - Discrimination in automated decisions
+• Проблемы справедливости и предвзятости
+  - Неравномерные предсказания для разных демографических групп
+  - Юридические и этические проблемы
+  - Дискриминация в автоматизированных решениях
 
 
-SLIDE 4: Problem Description - Real-World Impact
+СЛАЙД 4: Описание проблемы - Реальное влияние
 --------------------------------------------------------------------------------
-Why This Problem Matters:
+Почему эта проблема важна:
 
-Financial Impact:
-- Degraded models → poor business decisions
-- Biased models → legal liability
-- System failures → revenue loss
+Финансовое влияние:
+- Деградированные модели → плохие бизнес-решения
+- Предвзятые модели → юридическая ответственность
+- Сбои системы → потеря доходов
 
-Ethical Impact:
-- Unfair outcomes for vulnerable groups
-- Discrimination in hiring, lending, justice
-- Loss of public trust in AI systems
+Этическое влияние:
+- Несправедливые исходы для уязвимых групп
+- Дискриминация в найме, кредитовании, правосудии
+- Потеря общественного доверия к AI-системам
 
-Technical Impact:
-- Need for constant manual monitoring
-- Difficult to detect issues early
-- Limited tools for comprehensive monitoring
+Техническое влияние:
+- Необходимость постоянного ручного мониторинга
+- Сложно обнаружить проблемы на раннем этапе
+- Ограниченные инструменты для комплексного мониторинга
 
 
-SLIDE 5: Problem Description - Research Questions
+СЛАЙД 5: Описание проблемы - Исследовательские вопросы
 --------------------------------------------------------------------------------
-Research Questions:
+Исследовательские вопросы:
 
-1. How can we automatically detect when ML models lose accuracy in production?
+1. Как автоматически обнаружить, когда ML-модели теряют точность в продакшене?
 
-2. What methods effectively detect data drift before model performance degrades?
+2. Какие методы эффективно обнаруживают дрифт данных до деградации производительности модели?
 
-3. How can we ensure models maintain fairness across demographic groups?
+3. Как обеспечить сохранение справедливости моделей для разных демографических групп?
 
-4. Can we build a unified system that monitors all these aspects efficiently?
+4. Можем ли мы создать единую систему, которая эффективно мониторит все эти аспекты?
 
 
-SLIDE 6: Existing Solutions - Overview
+СЛАЙД 6: Существующие решения - Обзор
 --------------------------------------------------------------------------------
-Current State of MLOps Monitoring Tools:
+Текущее состояние инструментов мониторинга MLOps:
 
-Category 1: General MLOps Platforms
-• MLflow - Experiment tracking, model registry
-• Weights & Biases - Experiment tracking
-• Kubeflow - Kubernetes-based ML workflows
+Категория 1: Общие платформы MLOps
+• MLflow - отслеживание экспериментов, реестр моделей
+• Weights & Biases - отслеживание экспериментов
+• Kubeflow - ML-процессы на базе Kubernetes
 
-Category 2: Drift Detection Tools
-• Evidently AI - Open-source drift detection
-• Alibi Detect - Adversarial and drift detection
-• NannyML - Post-deployment data science
+Категория 2: Инструменты обнаружения дрифта
+• Evidently AI - открытый исходный код для обнаружения дрифта
+• Alibi Detect - обнаружение атак и дрифта
+• NannyML - наука о данных после развертывания
 
-Category 3: Fairness Tools
-• Fairlearn - Fairness assessment and mitigation
-• AIF360 - IBM's fairness toolkit
-• What-If Tool - Google's fairness analysis
+Категория 3: Инструменты справедливости
+• Fairlearn - оценка и смягчение справедливости
+• AIF360 - набор инструментов справедливости от IBM
+• What-If Tool - анализ справедливости от Google
 
 
-SLIDE 7: Existing Solutions - Limitations
+СЛАЙД 7: Существующие решения - Ограничения
 --------------------------------------------------------------------------------
-Gaps in Current Solutions:
+Пробелы в существующих решениях:
 
-Limitations:
-• Fragmented Tools
-  - Different tools for drift, fairness, performance
-  - No unified platform
-  - Difficult integration
+Ограничения:
+• Фрагментированные инструменты
+  - Разные инструменты для дрифта, справедливости, производительности
+  - Нет единой платформы
+  - Сложная интеграция
 
-• Resource Requirements
-  - Many tools require GPU or heavy infrastructure
-  - Not accessible for CPU-only environments
-  - High computational costs
+• Требования к ресурсам
+  - Многие инструменты требуют GPU или тяжелую инфраструктуру
+  - Недоступны для CPU-only окружений
+  - Высокие вычислительные затраты
 
-• Limited Real-Time Alerting
-  - Most tools focus on batch analysis
-  - Limited real-time monitoring capabilities
-  - Manual alert configuration
+• Ограниченное оповещение в реальном времени
+  - Большинство инструментов фокусируются на пакетном анализе
+  - Ограниченные возможности мониторинга в реальном времени
+  - Ручная настройка оповещений
 
-• Complexity
-  - Steep learning curves
-  - Complex setup and configuration
-  - Require dedicated DevOps support
+• Сложность
+  - Крутая кривая обучения
+  - Сложная установка и настройка
+  - Требуется поддержка DevOps
 
 
-SLIDE 8: Existing Solutions - Technology Comparison
+СЛАЙД 8: Существующие решения - Сравнение технологий
 --------------------------------------------------------------------------------
-Key Technologies Used in Existing Solutions:
+Ключевые технологии, используемые в существующих решениях:
 
-Drift Detection Methods:
-• Statistical Tests (KS, Chi-Square, PSI)
-• Distribution Distance Metrics (Wasserstein)
-• Machine Learning-based Drift Detectors
+Методы обнаружения дрифта:
+• Статистические тесты (KS, Chi-Square, PSI)
+• Метрики расстояния распределений (Wasserstein)
+• Детекторы дрифта на базе машинного обучения
 
-Performance Monitoring:
-• Time-series tracking of metrics
-• Baseline comparisons
-• Threshold-based alerting
+Мониторинг производительности:
+• Отслеживание метрик временных рядов
+• Сравнение с базовыми показателями
+• Оповещения на основе порогов
 
-Fairness Metrics:
-• Demographic Parity
-• Equal Opportunity
-• Disparate Impact Ratio
+Метрики справедливости:
+• Демографический паритет
+• Равные возможности
+• Коэффициент несопоставимого воздействия
 
 
-SLIDE 9: Our Approach - Proposed Solution
+СЛАЙД 9: Наш подход - Предлагаемое решение
 --------------------------------------------------------------------------------
-Trustworthy AI Monitor - Integrated System:
+Trustworthy AI Monitor - Интегрированная система:
 
-Unified Platform:
-• Single system for all monitoring aspects
-• Consistent API and dashboard
-• Real-time alerting
+Единая платформа:
+• Единая система для всех аспектов мониторинга
+• Согласованный API и панель управления
+• Оповещения в реальном времени
 
-CPU-Optimized:
-• Runs efficiently on standard hardware
-• No GPU requirements
-• Energy-efficient
+Оптимизированная для CPU:
+• Эффективно работает на стандартном оборудовании
+• Не требует GPU
+• Энергоэффективна
 
-Comprehensive Monitoring:
-• Performance degradation detection
-• Data drift detection (multiple methods)
-• Fairness analysis across groups
-• Real-time visualizations and alerts
+Комплексный мониторинг:
+• Обнаружение деградации производительности
+• Обнаружение дрифта данных (несколько методов)
+• Анализ справедливости для разных групп
+• Визуализации и оповещения в реальном времени
 
 
-SLIDE 10: Data Description - Datasets Overview
+СЛАЙД 10: Описание данных - Обзор наборов данных
 --------------------------------------------------------------------------------
-Datasets for Research Validation:
+Наборы данных для валидации исследования:
 
-Dataset 1: Adult Income (UCI Machine Learning Repository)
-• Size: ~48,000 records
-• Task: Binary classification (income >50K or ≤50K)
-• Features: 14 features (age, education, occupation, etc.)
-• Demographics: Gender, race information available
-• Use Case: Primary dataset for model training and fairness analysis
+Набор данных 1: Adult Income (UCI Machine Learning Repository)
+• Размер: ~48,000 записей
+• Задача: Бинарная классификация (доход >50K или ≤50K)
+• Признаки: 14 признаков (возраст, образование, профессия и т.д.)
+• Демография: Доступна информация о поле и расе
+• Применение: Основной набор данных для обучения модели и анализа справедливости
 
-Dataset 2: COMPAS
-• Size: ~7,000 records
-• Task: Recidivism prediction
-• Features: Demographics, criminal history, risk scores
-• Known Issues: Well-documented bias concerns
-• Use Case: Fairness analysis and bias detection validation
+Набор данных 2: COMPAS
+• Размер: ~7,000 записей
+• Задача: Предсказание рецидивизма
+• Признаки: Демография, криминальная история, оценки риска
+• Известные проблемы: Хорошо документированные проблемы предвзятости
+• Применение: Анализ справедливости и валидация обнаружения предвзятости
 
-Dataset 3: Synthetic Data
-• Generated: Configurable size and complexity
-• Task: Controlled drift simulation
-• Features: Customizable with demographic attributes
-• Use Case: Drift detection method validation
+Набор данных 3: Синтетические данные
+• Генерация: Настраиваемый размер и сложность
+• Задача: Контролируемая симуляция дрифта
+• Признаки: Настраиваемые с демографическими атрибутами
+• Применение: Валидация методов обнаружения дрифта
 
 
-SLIDE 11: Data Description - Adult Income Dataset
+СЛАЙД 11: Описание данных - Набор данных Adult Income
 --------------------------------------------------------------------------------
-Adult Income Dataset Details:
+Детали набора данных Adult Income:
 
-Source: UCI Machine Learning Repository (OpenML)
-Download: Automatic via OpenML API
-Storage: Cached locally in data/raw/adult.pkl
+Источник: UCI Machine Learning Repository (OpenML)
+Загрузка: Автоматическая через OpenML API
+Хранилище: Кэшируется локально в data/raw/adult.pkl
 
-Structure:
-• Training Set: ~39,000 samples (80%)
-• Test Set: ~9,700 samples (20%)
-• Features: 14 attributes
-  - Numerical: age, fnlwgt, education-num, hours-per-week, etc.
-  - Categorical: workclass, education, occupation, race, sex, etc.
+Структура:
+• Обучающая выборка: ~39,000 образцов (80%)
+• Тестовая выборка: ~9,700 образцов (20%)
+• Признаки: 14 атрибутов
+  - Числовые: возраст, fnlwgt, education-num, hours-per-week и т.д.
+  - Категориальные: workclass, education, occupation, race, sex и т.д.
 
-Target Variable:
-• Binary classification: income >50K (1) or ≤50K (0)
-• Class distribution: ~76% ≤50K, ~24% >50K (imbalanced)
+Целевая переменная:
+• Бинарная классификация: доход >50K (1) или ≤50K (0)
+• Распределение классов: ~76% ≤50K, ~24% >50K (несбалансированное)
 
-Demographic Attributes Available:
-• Sex: Male, Female
-• Race: White, Black, Asian, etc.
-• Enables fairness analysis across groups
+Доступные демографические атрибуты:
+• Пол: Мужской, Женский
+• Раса: Белые, Черные, Азиаты и т.д.
+• Позволяет проводить анализ справедливости для разных групп
 
 
-SLIDE 12: Data Description - COMPAS Dataset
+СЛАЙД 12: Описание данных - Набор данных COMPAS
 --------------------------------------------------------------------------------
-COMPAS Dataset Details:
+Детали набора данных COMPAS:
 
-Source: ProPublica (Publicly available research data)
-Download: Manual download from GitHub repository
-Storage: data/raw/compas-scores-two-years.csv
+Источник: ProPublica (публично доступные исследовательские данные)
+Загрузка: Ручная загрузка из репозитория GitHub
+Хранилище: data/raw/compas-scores-two-years.csv
 
-Structure:
-• Records: ~7,000 individuals
-• Features: Age, race, gender, criminal history, risk scores
-• Target: Two-year recidivism (yes/no)
+Структура:
+• Записи: ~7,000 человек
+• Признаки: Возраст, раса, пол, криминальная история, оценки риска
+• Целевая переменная: Рецидивизм в течение двух лет (да/нет)
 
-Key Attributes:
-• Demographics: Race, gender, age categories
-• Risk Assessment: COMPAS scores (decile scores)
-• Outcomes: Recidivism within 2 years
+Ключевые атрибуты:
+• Демография: Раса, пол, возрастные категории
+• Оценка риска: Оценки COMPAS (децильные оценки)
+• Исходы: Рецидивизм в течение 2 лет
 
-Research Significance:
-• Widely used for fairness research
-• Known bias issues documented
-• Ideal for validating fairness metrics
-• Reproduces ProPublica's analysis results
+Значение для исследования:
+• Широко используется в исследованиях справедливости
+• Известные проблемы предвзятости задокументированы
+• Идеален для валидации метрик справедливости
+• Воспроизводит результаты анализа ProPublica
 
 
-SLIDE 13: Data Description - Synthetic Data
+СЛАЙД 13: Описание данных - Синтетические данные
 --------------------------------------------------------------------------------
-Synthetic Data Generation:
+Генерация синтетических данных:
 
-Purpose: Controlled experiments for drift detection validation
+Цель: Контролируемые эксперименты для валидации обнаружения дрифта
 
-Generation Method:
+Метод генерации:
 • sklearn.datasets.make_classification
-• Configurable parameters:
-  - Number of samples (default: 10,000)
-  - Number of features (default: 10)
-  - Informative vs redundant features
-  - Class imbalance control
+• Настраиваемые параметры:
+  - Количество образцов (по умолчанию: 10,000)
+  - Количество признаков (по умолчанию: 10)
+  - Информативные vs избыточные признаки
+  - Контроль несбалансированности классов
 
-Demographic Features:
-• Age: Random distribution (18-80)
-• Gender: Binary (Male, Female)
-• Race: Multiple categories
-• Enables fairness testing without privacy concerns
+Демографические признаки:
+• Возраст: Случайное распределение (18-80)
+• Пол: Бинарный (Мужской, Женский)
+• Раса: Несколько категорий
+• Позволяет тестировать справедливость без проблем конфиденциальности
 
-Use Cases:
-• Drift intensity experiments (controlled drift)
-• Method comparison (same conditions)
-• Reproducible research (fixed random seeds)
+Применение:
+• Эксперименты с интенсивностью дрифта (контролируемый дрифт)
+• Сравнение методов (одинаковые условия)
+• Воспроизводимое исследование (фиксированные случайные семена)
 
 
-SLIDE 14: Data Description - Data Pipeline
+СЛАЙД 14: Описание данных - Конвейер обработки данных
 --------------------------------------------------------------------------------
-Data Processing Pipeline:
+Конвейер обработки данных:
 
-Step 1: Data Loading
-• Automatic download (Adult Income via OpenML)
-• Manual placement (COMPAS CSV file)
-• Synthetic generation on-demand
+Шаг 1: Загрузка данных
+• Автоматическая загрузка (Adult Income через OpenML)
+• Ручное размещение (CSV файл COMPAS)
+• Синтетическая генерация по требованию
 
-Step 2: Preprocessing
-• Handle missing values
-• Encode categorical features (One-Hot Encoding)
-• Normalize numerical features (StandardScaler)
-• Split train/test (80/20)
+Шаг 2: Предобработка
+• Обработка пропущенных значений
+• Кодирование категориальных признаков (One-Hot Encoding)
+• Нормализация числовых признаков (StandardScaler)
+• Разделение на train/test (80/20)
 
-Step 3: Storage
-• Raw data: data/raw/
-• Processed data: data/processed/
-• Synthetic data: Generated in-memory or saved
+Шаг 3: Хранилище
+• Сырые данные: data/raw/
+• Обработанные данные: data/processed/
+• Синтетические данные: Генерируются в памяти или сохраняются
 
-Step 4: Model Training
-• Train on processed training set
-• Evaluate on test set
-• Save models and preprocessors
+Шаг 4: Обучение модели
+• Обучение на обработанной обучающей выборке
+• Оценка на тестовой выборке
+• Сохранение моделей и препроцессоров
 
 
-SLIDE 15: Progress Update - Implementation Status
+СЛАЙД 15: Обновление прогресса - Статус реализации
 --------------------------------------------------------------------------------
-Completed Work:
+Выполненная работа:
 
-✓ Core Architecture
-  - Modular Python package structure
-  - Data loading and preprocessing pipeline
-  - Model training framework
+✓ Базовая архитектура
+  - Модульная структура Python-пакета
+  - Конвейер загрузки и предобработки данных
+  - Фреймворк обучения моделей
 
-✓ Monitoring Modules
-  - Performance monitoring (accuracy, F1, latency)
-  - Drift detection (PSI, KS-test, Chi-square, Wasserstein)
-  - Fairness metrics (Demographic Parity, Equal Opportunity)
+✓ Модули мониторинга
+  - Мониторинг производительности (точность, F1, задержка)
+  - Обнаружение дрифта (PSI, KS-тест, Chi-square, Wasserstein)
+  - Метрики справедливости (Демографический паритет, Равные возможности)
 
-✓ User Interface
-  - Streamlit dashboard with visualizations
-  - FastAPI backend for programmatic access
-  - Real-time alert system
+✓ Пользовательский интерфейс
+  - Панель управления Streamlit с визуализациями
+  - Backend FastAPI для программного доступа
+  - Система оповещений в реальном времени
 
-✓ Dataset Integration
-  - Adult Income dataset loader (working)
-  - COMPAS dataset structure ready
-  - Synthetic data generator implemented
+✓ Интеграция наборов данных
+  - Загрузчик набора данных Adult Income (работает)
+  - Структура набора данных COMPAS готова
+  - Генератор синтетических данных реализован
 
 
-SLIDE 16: Progress Update - Current Capabilities
+СЛАЙД 16: Обновление прогресса - Текущие возможности
 --------------------------------------------------------------------------------
-System Capabilities (Demonstrated):
+Возможности системы (продемонстрированы):
 
-Model Training:
-• Multiple algorithms: XGBoost, Random Forest, Logistic Regression
-• Automated preprocessing pipeline
-• Model persistence and loading
+Обучение модели:
+• Несколько алгоритмов: XGBoost, Random Forest, Logistic Regression
+• Автоматизированный конвейер предобработки
+• Сохранение и загрузка моделей
 
-Performance Monitoring:
-• Comprehensive metrics (accuracy, precision, recall, F1, ROC-AUC)
-• Latency measurement (mean, p95, p99)
-• Degradation detection with baseline comparison
+Мониторинг производительности:
+• Комплексные метрики (точность, прецизионность, полнота, F1, ROC-AUC)
+• Измерение задержки (среднее, p95, p99)
+• Обнаружение деградации со сравнением с базовыми показателями
 
-Drift Detection:
-• Multiple statistical methods
-• Per-feature drift analysis
-• Visual drift score reporting
+Обнаружение дрифта:
+• Несколько статистических методов
+• Анализ дрифта для каждого признака
+• Визуальная отчетность о баллах дрифта
 
-Fairness Analysis:
-• Group-wise performance metrics
-• Multiple fairness criteria
-• Violation detection and alerting
+Анализ справедливости:
+• Метрики производительности по группам
+• Несколько критериев справедливости
+• Обнаружение нарушений и оповещения
 
 
-SLIDE 17: Progress Update - Working Example
+СЛАЙД 17: Обновление прогресса - Рабочий пример
 --------------------------------------------------------------------------------
-Demonstrated Results:
+Продемонстрированные результаты:
 
-Model Performance (Adult Income Dataset):
-• Accuracy: 87.45%
-• F1 Score: 70.89%
+Производительность модели (набор данных Adult Income):
+• Точность: 87.45%
+• F1-оценка: 70.89%
 • ROC AUC: 92.90%
 
-System Functionality:
-• Dashboard operational at localhost:8501
-• API endpoints available
-• Alert system functional
-• All monitoring modules working
+Функциональность системы:
+• Панель управления работает на localhost:8501
+• API endpoints доступны
+• Система оповещений функциональна
+• Все модули мониторинга работают
 
-Generated Artifacts:
-• Trained model: models/trained_model.pkl
-• Preprocessing pipeline: models/preprocessor.pkl
-• Results: results/first_model_results.csv
+Сгенерированные артефакты:
+• Обученная модель: models/trained_model.pkl
+• Конвейер предобработки: models/preprocessor.pkl
+• Результаты: results/first_model_results.csv
 
 
-SLIDE 18: Next Steps - Immediate (Before Next Meeting)
+СЛАЙД 18: Следующие шаги - Ближайшие (до следующего совещания)
 --------------------------------------------------------------------------------
-Planned Work (Next 2-3 Weeks):
+Запланированная работа (следующие 2-3 недели):
 
-1. Complete Chapter 1 Draft
-   - Finalize problem description section
-   - Complete technology comparison section
-   - Write solution concept in detail
+1. Завершить черновик Главы 1
+   - Завершить раздел описания проблемы
+   - Завершить раздел сравнения технологий
+   - Написать концепцию решения подробно
 
-2. Conduct Initial Experiments
-   - Compare drift detection methods
-   - Validate fairness metrics on COMPAS
-   - Benchmark performance monitoring
+2. Провести первоначальные эксперименты
+   - Сравнить методы обнаружения дрифта
+   - Валидировать метрики справедливости на COMPAS
+   - Бенчмарк мониторинга производительности
 
-3. Article Preparation
-   - Draft article based on Chapter 1
-   - Literature review section
-   - Methodology overview
+3. Подготовка статьи
+   - Черновик статьи на основе Главы 1
+   - Раздел обзора литературы
+   - Обзор методологии
 
-4. Code Refinement
-   - Add remaining datasets (COMPAS)
-   - Optimize performance
-   - Expand test coverage
+4. Улучшение кода
+   - Добавить оставшиеся наборы данных (COMPAS)
+   - Оптимизировать производительность
+   - Расширить покрытие тестами
 
 
-SLIDE 19: Next Steps - Research Plan
+СЛАЙД 19: Следующие шаги - План исследования
 --------------------------------------------------------------------------------
-Research Roadmap:
+Дорожная карта исследования:
 
-Phase 1: Baseline Experiments (Current - December)
-• Validate all monitoring methods
-• Establish performance benchmarks
-• Compare with existing solutions
+Фаза 1: Базовые эксперименты (Текущая - Декабрь)
+• Валидировать все методы мониторинга
+• Установить бенчмарки производительности
+• Сравнить с существующими решениями
 
-Phase 2: Advanced Experiments (January - February)
-• Long-term drift simulation
-• Fairness mitigation techniques
-• Energy efficiency analysis
+Фаза 2: Продвинутые эксперименты (Январь - Февраль)
+• Симуляция долгосрочного дрифта
+• Техники смягчения справедливости
+• Анализ энергоэффективности
 
-Phase 3: Integration and Deployment (March)
-• Production-ready features
-• Comprehensive testing
-• Documentation completion
+Фаза 3: Интеграция и развертывание (Март)
+• Функции готовые к продакшену
+• Комплексное тестирование
+• Завершение документации
 
-Phase 4: Thesis Writing (April - May)
-• Complete all chapters
-• Finalize results and conclusions
-• Defense preparation
+Фаза 4: Написание диссертации (Апрель - Май)
+• Завершить все главы
+• Завершить результаты и выводы
+• Подготовка к защите
 
 
-SLIDE 20: Challenges and Solutions
+СЛАЙД 20: Вызовы и решения
 --------------------------------------------------------------------------------
-Current Challenges:
+Текущие вызовы:
 
-Challenge 1: Dataset Availability
-• COMPAS requires manual download
-• Solution: Provide clear download instructions
+Вызов 1: Доступность наборов данных
+• COMPAS требует ручной загрузки
+• Решение: Предоставить четкие инструкции по загрузке
 
-Challenge 2: Integration Complexity
-• Multiple monitoring aspects to integrate
-• Solution: Modular architecture allows incremental development
+Вызов 2: Сложность интеграции
+• Несколько аспектов мониторинга для интеграции
+• Решение: Модульная архитектура позволяет поэтапную разработку
 
-Challenge 3: Fairness Evaluation
-• Need real demographic data for meaningful analysis
-• Solution: Using Adult Income (has demographics) and COMPAS
+Вызов 3: Оценка справедливости
+• Нужны реальные демографические данные для значимого анализа
+• Решение: Использование Adult Income (есть демография) и COMPAS
 
-Challenge 4: Time Management
-• Balancing implementation and documentation
-• Solution: Prioritizing working prototype first, documentation parallel
+Вызов 4: Управление временем
+• Балансирование между реализацией и документацией
+• Решение: Приоритет работающему прототипу, документация параллельно
 
 
-SLIDE 21: Research Contribution
+СЛАЙД 21: Научный вклад исследования
 --------------------------------------------------------------------------------
-Expected Scientific Contribution:
+Ожидаемый научный вклад:
 
-1. Integrated Platform
-   - Unified system for reliability and fairness monitoring
-   - CPU-efficient implementation
-   - Accessible for resource-constrained environments
+1. Интегрированная платформа
+   - Единая система для мониторинга надежности и справедливости
+   - Реализация, эффективная для CPU
+   - Доступна для окружений с ограниченными ресурсами
 
-2. Method Comparison
-   - Comparative analysis of drift detection methods
-   - Fairness metric evaluation
-   - Performance benchmark results
+2. Сравнение методов
+   - Сравнительный анализ методов обнаружения дрифта
+   - Оценка метрик справедливости
+   - Результаты бенчмарков производительности
 
-3. Practical Tool
-   - Open-source implementation
-   - Ready-to-use monitoring system
-   - Real-time alerting capabilities
+3. Практический инструмент
+   - Реализация с открытым исходным кодом
+   - Готовая к использованию система мониторинга
+   - Возможности оповещения в реальном времени
 
 
-SLIDE 22: Timeline Compliance
+СЛАЙД 22: Соответствие временной шкале
 --------------------------------------------------------------------------------
-Current Status vs. Timeline:
+Текущий статус vs. Временная шкала:
 
-✓ On Track for Chapter 1 Draft
-  - Problem description: Complete
-  - Existing solutions: In progress
-  - Data description: Complete
-  - Technology analysis: In progress
-  - Solution concept: Drafted
+✓ В графике для черновика Главы 1
+  - Описание проблемы: Завершено
+  - Существующие решения: В процессе
+  - Описание данных: Завершено
+  - Анализ технологий: В процессе
+  - Концепция решения: Написана
 
-✓ Intermediate Meeting Preparation
-  - Presentation ready
-  - First 3 points prepared
-  - Demonstration ready
+✓ Подготовка к промежуточному совещанию
+  - Презентация готова
+  - Первые 3 пункта подготовлены
+  - Демонстрация готова
 
-⏳ Upcoming Milestones
-  - Chapter 1 draft: By mid-December
-  - Article draft: By mid-December
+⏳ Предстоящие вехи
+  - Черновик Главы 1: К середине декабря
+  - Черновик статьи: К середине декабря
 
 
-SLIDE 23: Questions for Discussion
+СЛАЙД 23: Вопросы для обсуждения
 --------------------------------------------------------------------------------
-Topics for Feedback:
+Темы для обратной связи:
 
-1. Technology Analysis
-   - Which existing tools should we compare in detail?
-   - Any additional metrics we should include?
+1. Анализ технологий
+   - Какие существующие инструменты нужно сравнить подробно?
+   - Какие дополнительные метрики нужно включить?
 
-2. Dataset Selection
-   - Are Adult Income and COMPAS sufficient?
-   - Should we add more datasets?
+2. Выбор наборов данных
+   - Достаточно ли Adult Income и COMPAS?
+   - Нужно ли добавить больше наборов данных?
 
-3. Research Direction
-   - Priority areas for experiments?
-   - Any specific aspects to emphasize?
+3. Направление исследования
+   - Приоритетные области для экспериментов?
+   - Какие конкретные аспекты подчеркнуть?
 
-4. Timeline Adjustments
-   - Any concerns about current pace?
-   - Suggestions for reprioritization?
+4. Корректировки временной шкалы
+   - Есть ли опасения по поводу текущего темпа?
+   - Предложения по пересмотру приоритетов?
 
 
-SLIDE 24: Conclusion
+СЛАЙД 24: Заключение
 --------------------------------------------------------------------------------
-Summary:
+Резюме:
 
-✓ Problem clearly defined and documented
-✓ Existing solutions analyzed
-✓ Data sources identified and integrated
-✓ Working prototype demonstrated
-✓ Research direction validated
+✓ Проблема четко определена и задокументирована
+✓ Существующие решения проанализированы
+✓ Источники данных определены и интегрированы
+✓ Рабочий прототип продемонстрирован
+✓ Направление исследования подтверждено
 
-Next Steps:
-• Complete Chapter 1 draft
-• Conduct initial experiments
-• Prepare article draft
-• Continue system development
+Следующие шаги:
+• Завершить черновик Главы 1
+• Провести первоначальные эксперименты
+• Подготовить черновик статьи
+• Продолжить разработку системы
 
-Thank you for your attention!
+Спасибо за внимание!
 
-Questions?
+Вопросы?
 
 
 ================================================================================
-END OF PRESENTATION
+КОНЕЦ ПРЕЗЕНТАЦИИ
 ================================================================================
-
