@@ -104,24 +104,36 @@ def plot_confusion_matrix(
     if len(labels) != cm.shape[0]:
         labels = labels[:cm.shape[0]] if len(labels) > cm.shape[0] else labels + ['Class ' + str(i) for i in range(len(labels), cm.shape[0])]
     
+    # Convert to list for Plotly compatibility (Plotly works better with Python lists)
+    cm_list = cm.tolist()
+    
+    # Format text labels for display
+    cm_text = [[f"{int(val):,}" for val in row] for row in cm_list]
+    
+    # Create heatmap
     fig = go.Figure(data=go.Heatmap(
-        z=cm,
+        z=cm_list,
         x=labels,
         y=labels,
-        text=cm,
+        text=cm_text,
         texttemplate='%{text}',
         textfont={"size": 16},
         colorscale='Blues',
-        showscale=True
+        showscale=True,
+        hoverongaps=False
     ))
     
+    # Update layout with proper axis configuration
     fig.update_layout(
         title="Confusion Matrix",
         xaxis_title="Predicted Label",
         yaxis_title="True Label",
         template='plotly_white',
-        height=500
+        height=500,
+        yaxis=dict(autorange="reversed")  # Reverse y-axis to show True Labels top-to-bottom (standard format)
     )
+    
+    logger.info(f"Confusion matrix plot created successfully: shape={cm.shape}, labels={labels}")
     
     return fig
 
