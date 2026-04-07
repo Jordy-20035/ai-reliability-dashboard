@@ -72,11 +72,12 @@ def run_retrain_pipeline(
     else:
         logger.info("Trained model v%s not promoted (%s)", rec.version, reason)
 
+    exp_id: int | None = None
     try:
         from src.lifecycle.service import default_lifecycle_service
 
         svc = default_lifecycle_service()
-        svc.sync_from_retrain(
+        exp_id, _mid = svc.sync_from_retrain(
             experiment_name=f"retrain_v{rec.version}_{scenario}",
             version_num=rec.version,
             artifact_path=artifact,
@@ -92,6 +93,34 @@ def run_retrain_pipeline(
         )
     except Exception as e:
         logger.warning("Lifecycle DB sync skipped: %s", e)
+
+    try:
+        from src.data_management.service import default_data_management_service
+
+        dm = default_data_management_service()
+        ds_id = dm.register_dataset_from_dataframe(
+            merged,
+            name=f"merged_training_{scenario}_v{rec.version}",
+            kind="merged_labeled",
+            notes="reference+current merge used for this retrain",
+        )
+        bl_id: int | None = None
+        baseline_path = cfg.root / "artifacts" / "baseline_profile.json"
+        if baseline_path.is_file():
+            bl_id = dm.ensure_baseline_snapshot(
+                baseline_path,
+                name="drift_baseline_profile",
+                notes="PSI bin edges JSON from drift baseline",
+            )
+        dm.record_training_provenance(
+            dataset_version_id=ds_id,
+            baseline_snapshot_id=bl_id,
+            lifecycle_experiment_id=exp_id,
+            lifecycle_model_version_num=rec.version,
+            extra={"scenario": scenario, "promoted": promote},
+        )
+    except Exception as e:
+        logger.warning("Data management provenance skipped: %s", e)
 
     return RetrainResult(
         version=rec.version,

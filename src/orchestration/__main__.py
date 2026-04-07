@@ -32,6 +32,28 @@ def cmd_init_baseline(args: argparse.Namespace) -> None:
     assert cfg.baseline_path is not None
     fit_or_load_baseline(ref, cfg.baseline_path, psi_bins=args.psi_bins)
     print(f"Baseline saved to {cfg.baseline_path}")
+    try:
+        from src.data_management.service import default_data_management_service
+        from src.data_management.summaries import distribution_summary
+
+        dm = default_data_management_service()
+        dvid = dm.register_dataset_from_dataframe(
+            ref,
+            name="drift_reference_features_init",
+            kind="reference_features",
+            notes="Feature matrix used to fit PSI baseline (init-baseline)",
+        )
+        summ = distribution_summary(ref)
+        dm.ensure_baseline_snapshot(
+            cfg.baseline_path,
+            name="baseline_profile",
+            dataset_version_id=dvid,
+            summary=summ,
+            notes="Linked to reference feature snapshot at init-baseline",
+        )
+        print("Registered dataset + baseline snapshot in data_management.db")
+    except Exception as e:
+        print(f"Data management registration skipped: {e}")
 
 
 def cmd_check_once(args: argparse.Namespace) -> None:

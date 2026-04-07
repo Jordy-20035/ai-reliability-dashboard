@@ -50,6 +50,30 @@ python -m src.lifecycle promote <model_row_id> --to staging
 python -m src.lifecycle production-id
 ```
 
+## 5. Data management (SQLite)
+
+**Database:** `artifacts/data_management.db` (gitignored with other `artifacts/`).
+
+| Table | Purpose |
+|-------|---------|
+| **`dataset_versions`** | Content **SHA-256** fingerprint, row count, column list, name/kind; deduped by hash (same bytes → same id). |
+| **`baseline_snapshots`** | Drift **`baseline_profile.json`** path + hash; optional link to a reference dataset row + **JSON distribution summary** (quantiles / top categories). |
+| **`training_provenance`** | Links a retrain to **dataset_version_id**, optional **baseline_snapshot_id**, **lifecycle experiment id**, model version number, **git SHA**, extra JSON. |
+
+**Automatic hooks**
+
+- **`python -m src.orchestration init-baseline`** — registers the **reference feature** snapshot used for PSI bins and a **baseline snapshot** with a compact **distribution summary**.
+- **Each `run_retrain_pipeline`** — registers the **merged training** dataframe fingerprint and a provenance row (baseline snapshot if `artifacts/baseline_profile.json` exists).
+
+**CLI**
+
+```bash
+python -m src.data_management register-raw
+python -m src.data_management list-datasets
+python -m src.data_management list-baselines
+python -m src.data_management list-provenance
+```
+
 ```bash
 pytest
 ```

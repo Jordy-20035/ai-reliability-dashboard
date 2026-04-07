@@ -172,8 +172,13 @@ class LifecycleService:
             if not row:
                 raise ValueError(f"Unknown model id {model_row_id}")
             current = DeploymentStage(row["stage"])
-            if to_stage not in STAGE_TRANSITIONS.get(current, ()):
-                raise ValueError(f"Cannot promote {current.value} -> {to_stage.value}")
+            allowed = STAGE_TRANSITIONS.get(current, ())
+            if to_stage not in allowed:
+                allowed_str = ", ".join(s.value for s in allowed) if allowed else "none"
+                raise ValueError(
+                    f"Cannot move {current.value} -> {to_stage.value}. "
+                    f"From {current.value}, allowed next stages are: {allowed_str}"
+                )
         if to_stage == DeploymentStage.PRODUCTION:
             self.set_production(model_row_id)
             return

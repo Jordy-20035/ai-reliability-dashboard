@@ -34,6 +34,7 @@ def cmd_promote(args: argparse.Namespace) -> None:
 
 
 def cmd_production(args: argparse.Namespace) -> None:
+    """Print the DB row id of the model currently marked production (same as list-models id column)."""
     svc = default_lifecycle_service()
     mid = svc.get_production_model_id()
     print("production_model_row_id:", mid)
@@ -64,9 +65,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pp.set_defaults(func=cmd_promote)
 
-    sub.add_parser("production-id", help="Show settings: production model row id").set_defaults(
-        func=cmd_production
-    )
+    sub.add_parser(
+        "production-id",
+        help="Print the model_versions.id row that is currently production (serving pointer)",
+    ).set_defaults(func=cmd_production)
 
     return p
 
