@@ -8,9 +8,14 @@ from typing import Any, Sequence
 
 from src.drift_detection.report import run_drift_analysis
 
-from .actions import Action, LogAction, PipelineContext, PlaceholderRetrainAction
+from .actions import Action, LogAction, PipelineContext, RetrainPipelineAction
 from .config import OrchestratorConfig
-from .data_context import fit_or_load_baseline, load_feature_matrix, split_reference_current
+from .data_context import (
+    fit_or_load_baseline,
+    load_feature_matrix,
+    split_labeled_reference_current,
+    split_reference_current,
+)
 from .policies import DriftThresholdPolicy
 from .store import RunStore
 
@@ -49,7 +54,7 @@ class Orchestrator:
             max_ks_significant_numeric=config.max_ks_significant_numeric,
             max_chi2_significant_categorical=config.max_chi2_significant_categorical,
         )
-        self.actions: list[Action] = list(actions) if actions else [LogAction(), PlaceholderRetrainAction()]
+        self.actions: list[Action] = list(actions) if actions else [LogAction(), RetrainPipelineAction()]
         self.store = store or RunStore(config.sqlite_path)  # type: ignore[arg-type]
 
     def run_pipeline(self) -> PipelineResult:
@@ -57,6 +62,11 @@ class Orchestrator:
         X = load_feature_matrix()
         ref, cur = split_reference_current(
             X,
+            test_size=self.config.test_size,
+            random_state=self.config.random_state,
+            scenario=self.config.scenario,
+        )
+        labeled_ref, labeled_cur = split_labeled_reference_current(
             test_size=self.config.test_size,
             random_state=self.config.random_state,
             scenario=self.config.scenario,
@@ -72,6 +82,8 @@ class Orchestrator:
             policy_triggered=triggered,
             trigger_reasons=reasons,
             metadata={"scenario": self.config.scenario},
+            labeled_reference=labeled_ref,
+            labeled_current=labeled_cur,
         )
         for act in self.actions:
             act.run(ctx)

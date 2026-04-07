@@ -4,7 +4,7 @@ Automation / orchestration: schedule drift checks, evaluate policies, trigger ac
 This is the control plane that wires drift detection into repeatable workflows.
 """
 
-from .actions import LogAction, PipelineContext, PlaceholderRetrainAction
+from .actions import LogAction, PipelineContext, PlaceholderRetrainAction, RetrainPipelineAction
 from .engine import Orchestrator, PipelineResult
 from .policies import DriftThresholdPolicy
 
@@ -15,4 +15,5 @@ __all__ = [
     "PipelineContext",
     "LogAction",
     "PlaceholderRetrainAction",
+    "RetrainPipelineAction",
 ]

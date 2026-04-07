@@ -42,6 +42,34 @@ def split_reference_current(
     raise ValueError(f"Unknown scenario: {scenario}")
 
 
+def split_labeled_reference_current(
+    *,
+    test_size: float,
+    random_state: int,
+    scenario: str,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Same split as `split_reference_current`, but full rows including `income` target.
+
+    Used for automated retraining (merge reference + current with labels).
+    """
+    full = load_adult_csv()
+    if scenario == "random_holdout":
+        ref_full, cur_full = train_test_split(
+            full, test_size=test_size, random_state=random_state
+        )
+        return ref_full.reset_index(drop=True), cur_full.reset_index(drop=True)
+    if scenario == "age_shift":
+        X = full[FEATURE_COLS]
+        ref_X, _ = train_test_split(X, test_size=test_size, random_state=random_state)
+        ref_idx = ref_X.index
+        ref_full = full.loc[ref_idx].reset_index(drop=True)
+        mask = full["age"] >= 40
+        cur_full = full.loc[mask].reset_index(drop=True)
+        return ref_full, cur_full
+    raise ValueError(f"Unknown scenario: {scenario}")
+
+
 def fit_or_load_baseline(
     reference: pd.DataFrame,
     path,
