@@ -11,6 +11,10 @@ data/raw/*
 !data/raw/.gitkeep
 !data/raw/README.txt
 
+# Orchestration artifacts (local DB + baseline JSON)
+artifacts/*
+!artifacts/.gitkeep
+
 # IDE
 .idea/
 .vscode/

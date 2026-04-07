@@ -1,4 +1,6 @@
-# Data drift detection
+# Trustworthy AI — drift + orchestration
+
+## 1. Data drift detection
 
 Statistical drift vs a **training baseline**: **PSI** (binned), **Kolmogorov–Smirnov** (numeric), **Chi-square** (categorical homogeneity).
 
@@ -9,5 +11,21 @@ Statistical drift vs a **training baseline**: **PSI** (binned), **Kolmogorov–S
 ```bash
 pip install -r requirements.txt
 python -m src.drift_detection
+```
+
+## 2. Automation / orchestration (“brain”)
+
+Runs drift checks **on a schedule** or **on demand** (HTTP), evaluates **threshold policies**, runs **actions** (log + placeholder retrain), and appends runs to **SQLite** (`artifacts/orchestration.db`).
+
+```bash
+python -m src.orchestration init-baseline
+python -m src.orchestration check-once --scenario random_holdout
+python -m src.orchestration check-once --scenario age_shift
+python -m src.orchestration history
+# python -m src.orchestration serve --interval 60
+# python -m src.orchestration serve-http --port 8000
+```
+
+```bash
 pytest
 ```
