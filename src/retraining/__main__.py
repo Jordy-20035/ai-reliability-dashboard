@@ -22,7 +22,7 @@ def main() -> None:
         random_state=42,
         scenario=args.scenario,
     )
-    result = run_retrain_pipeline(ref, cur)
+    result = run_retrain_pipeline(ref, cur, scenario=args.scenario)
     print("version", result.version)
     print("promoted", result.promoted, result.promote_reason)
     print("metrics", result.metrics)

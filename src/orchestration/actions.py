@@ -71,7 +71,11 @@ class RetrainPipelineAction:
             return
         from src.retraining.pipeline import run_retrain_pipeline
 
-        result = run_retrain_pipeline(ctx.labeled_reference, ctx.labeled_current)
+        result = run_retrain_pipeline(
+            ctx.labeled_reference,
+            ctx.labeled_current,
+            scenario=str(ctx.metadata.get("scenario", "retrain")),
+        )
         logger.warning(
             "Retrain finished v%s promoted=%s metrics=%s (%s)",
             result.version,

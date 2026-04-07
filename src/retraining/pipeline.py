@@ -31,6 +31,7 @@ def run_retrain_pipeline(
     labeled_current: pd.DataFrame,
     *,
     cfg: RetrainConfig | None = None,
+    scenario: str = "retrain",
 ) -> RetrainResult:
     """
     Merge labeled reference + current, train, evaluate, save artifact, register, maybe promote.
@@ -70,6 +71,27 @@ def run_retrain_pipeline(
         logger.info("Promoted model v%s as champion (%s)", rec.version, reason)
     else:
         logger.info("Trained model v%s not promoted (%s)", rec.version, reason)
+
+    try:
+        from src.lifecycle.service import default_lifecycle_service
+
+        svc = default_lifecycle_service()
+        svc.sync_from_retrain(
+            experiment_name=f"retrain_v{rec.version}_{scenario}",
+            version_num=rec.version,
+            artifact_path=artifact,
+            metrics=metrics,
+            promoted_to_production=promote,
+            notes=reason,
+            experiment_params={
+                "test_size": cfg.test_size,
+                "random_state": cfg.random_state,
+                "primary_metric": cfg.primary_metric,
+            },
+            scenario=scenario,
+        )
+    except Exception as e:
+        logger.warning("Lifecycle DB sync skipped: %s", e)
 
     return RetrainResult(
         version=rec.version,
