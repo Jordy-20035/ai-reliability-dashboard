@@ -18,19 +18,37 @@ def cmd_register_raw(args: argparse.Namespace) -> None:
 
 def cmd_list_datasets(args: argparse.Namespace) -> None:
     dm = default_data_management_service()
-    for d in dm.list_datasets(limit=args.limit):
+    rows = dm.list_datasets(limit=args.limit)
+    if not rows:
+        print("(no dataset versions — run: python -m src.data_management register-raw)")
+        return
+    for d in rows:
         print(d.id, d.content_hash[:12], d.row_count, d.name, d.kind)
 
 
 def cmd_list_baselines(args: argparse.Namespace) -> None:
     dm = default_data_management_service()
-    for b in dm.list_baselines(limit=args.limit):
+    rows = dm.list_baselines(limit=args.limit)
+    if not rows:
+        print(
+            "(no baseline snapshots — run: python -m src.orchestration init-baseline "
+            "so baseline_profile.json exists and is registered, or run a retrain)"
+        )
+        return
+    for b in rows:
         print(b.id, b.content_hash[:12], b.artifact_path, b.dataset_version_id)
 
 
 def cmd_list_provenance(args: argparse.Namespace) -> None:
     dm = default_data_management_service()
-    for p in dm.list_provenance(limit=args.limit):
+    rows = dm.list_provenance(limit=args.limit)
+    if not rows:
+        print(
+            "(no provenance rows — these are written when you run "
+            "python -m src.retraining … or retrain via orchestration after drift triggers)"
+        )
+        return
+    for p in rows:
         print(p)
 
 
