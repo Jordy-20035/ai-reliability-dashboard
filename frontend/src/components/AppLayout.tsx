@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   Container,
-  Stack,
   Toolbar,
   Typography,
 } from '@mui/material'
@@ -22,11 +21,11 @@ export function AppLayout() {
   return (
     <Box>
       <AppBar position="sticky" elevation={0} sx={{ borderBottom: '1px solid #25314c' }}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
+        <Toolbar sx={{ justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
             Trustworthy AI Control Center
           </Typography>
-          <Stack direction="row" spacing={1}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
             {nav.map((item) => (
               <Button
                 key={item.to}
@@ -39,7 +38,10 @@ export function AppLayout() {
                 {item.label}
               </Button>
             ))}
-          </Stack>
+            <Button href="/docs" target="_blank" rel="noreferrer" variant="outlined" size="small">
+              API docs
+            </Button>
+          </Box>
         </Toolbar>
       </AppBar>
       <Container maxWidth="xl" sx={{ py: 3 }}>

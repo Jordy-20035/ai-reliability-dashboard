@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   Button,
+  LinearProgress,
   MenuItem,
   Paper,
   Select,
@@ -13,6 +14,7 @@ import {
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import { getExperiments, getModels, getProductionPointer, promoteModel, runRetrain } from '../api/endpoints'
 import type { LifecycleExperiment, LifecycleModel, Scenario } from '../types'
+import { getErrorMessage } from '../utils/errors'
 
 const modelCols: GridColDef<LifecycleModel>[] = [
   { field: 'id', headerName: 'Row ID', width: 90 },
@@ -46,14 +48,18 @@ export function ModelsPage() {
   const [promoteId, setPromoteId] = useState('')
   const [promoteStage, setPromoteStage] = useState('staging')
   const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
+    setError(null)
     try {
       const [m, e, p] = await Promise.all([getModels(), getExperiments(100), getProductionPointer()])
       setModels(m.items)
       setExperiments(e.items)
       setProductionId(p.production_model_row_id)
+    } catch (err) {
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -71,7 +77,7 @@ export function ModelsPage() {
       setMessage(`Retrain done: v${String(res.version)} promoted=${String(res.promoted)}`)
       await load()
     } catch (e) {
-      setMessage(`Retrain failed: ${String(e)}`)
+      setMessage(`Retrain failed: ${getErrorMessage(e)}`)
       setLoading(false)
     }
   }
@@ -89,13 +95,19 @@ export function ModelsPage() {
       setMessage(`Model row ${String(id)} moved to ${promoteStage}.`)
       await load()
     } catch (e) {
-      setMessage(`Promotion failed: ${String(e)}`)
+      setMessage(`Promotion failed: ${getErrorMessage(e)}`)
       setLoading(false)
     }
   }
 
   return (
     <Stack spacing={2}>
+      {loading && <LinearProgress />}
+      {error && (
+        <Alert severity="error">
+          Could not load models — start API: <code>python -m src.api --port 8000</code> — {error}
+        </Alert>
+      )}
       <Typography variant="h4" sx={{ fontWeight: 700 }}>
         Model Lifecycle & Control
       </Typography>

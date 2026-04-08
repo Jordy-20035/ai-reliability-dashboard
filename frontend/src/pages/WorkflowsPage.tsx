@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Alert, Box, Button, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, LinearProgress, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import { getRuns, runDriftCheck } from '../api/endpoints'
 import type { RunRecord, Scenario } from '../types'
+import { getErrorMessage } from '../utils/errors'
 
 const cols: GridColDef<RunRecord>[] = [
   { field: 'id', headerName: 'Run ID', width: 90 },
@@ -29,12 +30,16 @@ export function WorkflowsPage() {
   const [loading, setLoading] = useState(false)
   const [scenario, setScenario] = useState<Scenario>('random_holdout')
   const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
+    setError(null)
     try {
       const data = await getRuns(100)
       setRows(data.items)
+    } catch (e) {
+      setError(getErrorMessage(e))
     } finally {
       setLoading(false)
     }
@@ -52,13 +57,19 @@ export function WorkflowsPage() {
       setMessage(`Run complete (run_id=${String(res.run_id)} triggered=${String(res.policy_triggered)})`)
       await load()
     } catch (e) {
-      setMessage(`Run failed: ${String(e)}`)
+      setMessage(`Run failed: ${getErrorMessage(e)}`)
       setLoading(false)
     }
   }
 
   return (
     <Stack spacing={2}>
+      {loading && <LinearProgress />}
+      {error && (
+        <Alert severity="error">
+          Could not load runs — start API: <code>python -m src.api --port 8000</code> — {error}
+        </Alert>
+      )}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
           Workflow Tracking

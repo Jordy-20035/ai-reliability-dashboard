@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Paper, Stack, Typography } from '@mui/material'
+import { Alert, LinearProgress, Paper, Stack, Typography } from '@mui/material'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import { getDatasets, getProvenance } from '../api/endpoints'
 import type { DatasetVersion, ProvenanceRow } from '../types'
+import { getErrorMessage } from '../utils/errors'
 
 const datasetCols: GridColDef<DatasetVersion>[] = [
   { field: 'id', headerName: 'ID', width: 80 },
@@ -27,13 +28,17 @@ export function DataPage() {
   const [datasets, setDatasets] = useState<DatasetVersion[]>([])
   const [provenance, setProvenance] = useState<ProvenanceRow[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
+    setError(null)
     try {
       const [d, p] = await Promise.all([getDatasets(100), getProvenance(100)])
       setDatasets(d.items)
       setProvenance(p.items)
+    } catch (e) {
+      setError(getErrorMessage(e))
     } finally {
       setLoading(false)
     }
@@ -45,6 +50,12 @@ export function DataPage() {
 
   return (
     <Stack spacing={2}>
+      {loading && <LinearProgress />}
+      {error && (
+        <Alert severity="error">
+          Could not load data tables — start API: <code>python -m src.api --port 8000</code> — {error}
+        </Alert>
+      )}
       <Typography variant="h4" sx={{ fontWeight: 700 }}>
         Data Versioning & Provenance
       </Typography>

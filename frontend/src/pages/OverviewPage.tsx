@@ -1,21 +1,37 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Box, Button, Grid, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
+import {
+  Alert,
+  Box,
+  Button,
+  Grid,
+  LinearProgress,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  Typography,
+} from '@mui/material'
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { getOverview, runDriftCheck } from '../api/endpoints'
 import { KpiCard } from '../components/KpiCard'
 import type { OverviewResponse, Scenario } from '../types'
+import { getErrorMessage } from '../utils/errors'
 
 export function OverviewPage() {
   const [overview, setOverview] = useState<OverviewResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [scenario, setScenario] = useState<Scenario>('random_holdout')
   const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
+    setError(null)
     try {
       const data = await getOverview()
       setOverview(data)
+    } catch (e) {
+      setError(getErrorMessage(e))
     } finally {
       setLoading(false)
     }
@@ -45,7 +61,7 @@ export function OverviewPage() {
       )
       await load()
     } catch (e) {
-      setMessage(`Failed to run drift check: ${String(e)}`)
+      setMessage(`Failed to run drift check: ${getErrorMessage(e)}`)
     } finally {
       setLoading(false)
     }
@@ -53,6 +69,7 @@ export function OverviewPage() {
 
   return (
     <Stack spacing={2}>
+      {loading && <LinearProgress />}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
           System Overview
@@ -72,6 +89,11 @@ export function OverviewPage() {
         </Box>
       </Box>
 
+      {error && (
+        <Alert severity="error">
+          Could not reach API. Start backend: <code>python -m src.api --port 8000</code> — {error}
+        </Alert>
+      )}
       {message && <Alert severity="info">{message}</Alert>}
 
       <Grid container spacing={2}>
