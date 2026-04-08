@@ -9,6 +9,7 @@ from typing import Any, Sequence
 from src.drift_detection.report import run_drift_analysis
 
 from .actions import Action, LogAction, PipelineContext, RetrainPipelineAction
+from .alerts import WebhookAlertAction
 from .config import OrchestratorConfig
 from .data_context import (
     fit_or_load_baseline,
@@ -54,7 +55,14 @@ class Orchestrator:
             max_ks_significant_numeric=config.max_ks_significant_numeric,
             max_chi2_significant_categorical=config.max_chi2_significant_categorical,
         )
-        self.actions: list[Action] = list(actions) if actions else [LogAction(), RetrainPipelineAction()]
+        if actions:
+            self.actions = list(actions)
+        else:
+            self.actions = [LogAction()]
+            if config.alert_webhook_url:
+                self.actions.append(WebhookAlertAction(config.alert_webhook_url))
+            if config.enable_auto_retrain:
+                self.actions.append(RetrainPipelineAction())
         self.store = store or RunStore(config.sqlite_path)  # type: ignore[arg-type]
 
     def run_pipeline(self) -> PipelineResult:

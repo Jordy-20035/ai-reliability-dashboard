@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python -m src.api --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./artifacts:/app/artifacts
+    environment:
+      ORCH_ALERT_WEBHOOK_URL: ${ORCH_ALERT_WEBHOOK_URL:-}
+      ORCH_ENABLE_AUTO_RETRAIN: ${ORCH_ENABLE_AUTO_RETRAIN:-true}
+      ORCH_SCHEDULER_INTERVAL: ${ORCH_SCHEDULER_INTERVAL:-300}
+    restart: unless-stopped
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python -m src.orchestration serve --interval 0 --scenario ${ORCH_SCENARIO:-random_holdout}
+    depends_on:
+      - api
+    volumes:
+      - ./artifacts:/app/artifacts
+    environment:
+      ORCH_ALERT_WEBHOOK_URL: ${ORCH_ALERT_WEBHOOK_URL:-}
+      ORCH_ENABLE_AUTO_RETRAIN: ${ORCH_ENABLE_AUTO_RETRAIN:-true}
+      ORCH_SCHEDULER_INTERVAL: ${ORCH_SCHEDULER_INTERVAL:-300}
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped

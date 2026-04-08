@@ -99,3 +99,16 @@ class RunStore:
                 )
             )
         return out
+
+    def aggregate_stats(self) -> dict[str, int]:
+        """Operational counters for monitoring dashboards / alerts."""
+        with self._connect() as conn:
+            total = conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
+            triggered = conn.execute(
+                "SELECT COUNT(*) FROM runs WHERE policy_triggered = 1"
+            ).fetchone()[0]
+        return {
+            "total_runs": int(total or 0),
+            "triggered_runs": int(triggered or 0),
+            "ok_runs": int((total or 0) - (triggered or 0)),
+        }

@@ -62,6 +62,8 @@ def cmd_check_once(args: argparse.Namespace) -> None:
         max_high_psi_features=args.max_high_psi,
         max_ks_significant_numeric=args.max_ks,
         max_chi2_significant_categorical=args.max_chi2,
+        alert_webhook_url=args.alert_webhook_url,
+        enable_auto_retrain=not args.disable_auto_retrain,
     )
     orch = Orchestrator(cfg)
     result = orch.run_pipeline()
@@ -77,14 +79,17 @@ def cmd_serve(args: argparse.Namespace) -> None:
         max_high_psi_features=args.max_high_psi,
         max_ks_significant_numeric=args.max_ks,
         max_chi2_significant_categorical=args.max_chi2,
+        alert_webhook_url=args.alert_webhook_url,
+        enable_auto_retrain=not args.disable_auto_retrain,
     )
     orch = Orchestrator(cfg)
 
     def job() -> None:
         orch.run_pipeline()
 
-    start_interval_scheduler(job, interval_seconds=args.interval)
-    print(f"Scheduler running every {args.interval}s. Ctrl+C to stop.")
+    interval = args.interval or cfg.scheduler_interval_seconds
+    start_interval_scheduler(job, interval_seconds=interval)
+    print(f"Scheduler running every {interval}s. Ctrl+C to stop.")
     try:
         import time
 
@@ -102,6 +107,8 @@ def cmd_serve_http(args: argparse.Namespace) -> None:
         max_high_psi_features=args.max_high_psi,
         max_ks_significant_numeric=args.max_ks,
         max_chi2_significant_categorical=args.max_chi2,
+        alert_webhook_url=args.alert_webhook_url,
+        enable_auto_retrain=not args.disable_auto_retrain,
     )
     orch = Orchestrator(cfg)
     from .api import create_app
@@ -144,14 +151,26 @@ def build_parser() -> argparse.ArgumentParser:
     p_once.add_argument("--max-high-psi", type=int, default=0)
     p_once.add_argument("--max-ks", type=int, default=2)
     p_once.add_argument("--max-chi2", type=int, default=3)
+    p_once.add_argument("--alert-webhook-url", default=None)
+    p_once.add_argument(
+        "--disable-auto-retrain",
+        action="store_true",
+        help="Run checks/policy only, skip automated retraining action",
+    )
     p_once.set_defaults(func=cmd_check_once)
 
     p_srv = sub.add_parser("serve", help="Run drift check on an interval (background scheduler)")
-    p_srv.add_argument("--interval", type=int, default=60, help="Seconds between runs")
+    p_srv.add_argument("--interval", type=int, default=0, help="Seconds between runs (0 = config/env)")
     p_srv.add_argument("--scenario", choices=["random_holdout", "age_shift"], default="random_holdout")
     p_srv.add_argument("--max-high-psi", type=int, default=0)
     p_srv.add_argument("--max-ks", type=int, default=2)
     p_srv.add_argument("--max-chi2", type=int, default=3)
+    p_srv.add_argument("--alert-webhook-url", default=None)
+    p_srv.add_argument(
+        "--disable-auto-retrain",
+        action="store_true",
+        help="Run checks/policy only, skip automated retraining action",
+    )
     p_srv.set_defaults(func=cmd_serve)
 
     p_http = sub.add_parser("serve-http", help="HTTP API + POST /run/drift-check")
@@ -161,6 +180,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_http.add_argument("--max-high-psi", type=int, default=0)
     p_http.add_argument("--max-ks", type=int, default=2)
     p_http.add_argument("--max-chi2", type=int, default=3)
+    p_http.add_argument("--alert-webhook-url", default=None)
+    p_http.add_argument(
+        "--disable-auto-retrain",
+        action="store_true",
+        help="Run checks/policy only, skip automated retraining action",
+    )
     p_http.set_defaults(func=cmd_serve_http)
 
     p_hist = sub.add_parser("history", help="Show recent runs from SQLite")

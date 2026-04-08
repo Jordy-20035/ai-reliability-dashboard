@@ -18,3 +18,13 @@ def test_overview_shape() -> None:
     assert "kpis" in body
     assert "last_run" in body
 
+
+def test_ops_stats_shape() -> None:
+    client = TestClient(app)
+    r = client.get("/api/ops/stats")
+    assert r.status_code == 200
+    body = r.json()
+    assert "orchestration" in body
+    assert "total_runs" in body["orchestration"]
+    assert "trigger_rate" in body["orchestration"]
+

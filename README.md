@@ -87,6 +87,7 @@ Key endpoints:
 - `GET /health`
 - `GET /api/overview`
 - `GET /api/orchestration/runs?limit=50`
+- `GET /api/ops/stats`
 - `POST /api/orchestration/check-once?scenario=random_holdout`
 - `POST /api/retraining/run` body: `{"scenario":"random_holdout"}` or `{"scenario":"age_shift"}`
 - `GET /api/lifecycle/models`
@@ -121,3 +122,51 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 ```bash
 pytest
 ```
+
+## 8. Phase 3 operations (deployment + automation + alerts)
+
+### A) Env-driven orchestration controls
+
+The orchestration layer now supports operational env vars:
+
+- `ORCH_ALERT_WEBHOOK_URL` — optional webhook called when policy triggers.
+- `ORCH_ENABLE_AUTO_RETRAIN` — `true/false`; disable side-effect retraining for monitor-only mode.
+- `ORCH_SCHEDULER_INTERVAL` — scheduler interval seconds.
+
+CLI also accepts:
+
+```bash
+python -m src.orchestration check-once --disable-auto-retrain --alert-webhook-url https://example.test/webhook
+python -m src.orchestration serve --interval 0
+```
+
+(`--interval 0` means: use `ORCH_SCHEDULER_INTERVAL` from env/config.)
+
+### B) Operational stats endpoint
+
+```bash
+GET /api/ops/stats
+```
+
+Response includes total runs, triggered runs, ok runs, and trigger rate.
+
+### C) Docker Compose stack
+
+Files:
+
+- `Dockerfile` (backend API + scheduler image)
+- `frontend/Dockerfile` + `frontend/nginx.conf` (SPA build + serve)
+- `docker-compose.yml` (api + scheduler + frontend)
+- `.env.example` (Phase 3 env knobs)
+
+Run:
+
+```bash
+# create .env from .env.example, then:
+docker compose up --build
+```
+
+Then:
+
+- API: `http://localhost:8000/docs`
+- Dashboard: `http://localhost:8080`

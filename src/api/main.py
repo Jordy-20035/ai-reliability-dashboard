@@ -97,6 +97,20 @@ def create_app() -> FastAPI:
         rows = [asdict(r) for r in store.recent(limit=limit)]
         return {"items": rows, "count": len(rows)}
 
+    @app.get("/api/ops/stats")
+    def ops_stats() -> dict:
+        cfg = OrchestratorConfig()
+        store = RunStore(cfg.sqlite_path)  # type: ignore[arg-type]
+        stats = store.aggregate_stats()
+        total = stats["total_runs"]
+        trigger_rate = (stats["triggered_runs"] / total) if total > 0 else 0.0
+        return {
+            "orchestration": {
+                **stats,
+                "trigger_rate": round(trigger_rate, 4),
+            }
+        }
+
     @app.post("/api/orchestration/check-once")
     def orchestration_check_once(
         scenario: str = Query(default="random_holdout"),
