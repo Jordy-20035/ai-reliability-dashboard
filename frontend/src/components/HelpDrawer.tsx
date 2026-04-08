@@ -23,22 +23,48 @@ import { Link as RouterLink } from 'react-router-dom'
 type HelpDrawerProps = {
   /** Anchor element for drawer width on large screens */
   wide?: boolean
+  /** Render trigger as floating fixed button (bottom-right). */
+  floating?: boolean
 }
 
-export function HelpDrawer({ wide = true }: HelpDrawerProps) {
+export function HelpDrawer({ wide = true, floating = false }: HelpDrawerProps) {
   const [open, setOpen] = useState(false)
 
   return (
     <>
-      <Button
-        color="inherit"
-        startIcon={<HelpOutlined />}
-        onClick={() => setOpen(true)}
-        size="small"
-        sx={{ border: '1px solid rgba(255,255,255,0.35)' }}
+      <Box
+        sx={
+          floating
+            ? {
+                position: 'fixed',
+                right: 20,
+                bottom: 20,
+                zIndex: (theme) => theme.zIndex.drawer - 1,
+              }
+            : undefined
+        }
       >
-        How it works
-      </Button>
+        <Button
+          color={floating ? 'inherit' : 'inherit'}
+          variant={floating ? 'outlined' : 'text'}
+          startIcon={<HelpOutlined />}
+          onClick={() => setOpen(true)}
+          size="small"
+          sx={
+            floating
+              ? {
+                  borderRadius: 999,
+                  bgcolor: 'background.paper',
+                  borderColor: 'divider',
+                  boxShadow: 2,
+                  px: 1.75,
+                }
+              : { border: '1px solid rgba(255,255,255,0.35)' }
+          }
+        >
+          How it works
+        </Button>
+      </Box>
       <Drawer anchor="right" open={open} onClose={() => setOpen(false)}>
         <Toolbar
           sx={{

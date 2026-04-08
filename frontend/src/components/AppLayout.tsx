@@ -61,7 +61,6 @@ export function AppLayout() {
                 </Button>
               </Tooltip>
             ))}
-            <HelpDrawer />
             <Button href="/docs" target="_blank" rel="noreferrer" variant="outlined" size="small">
               API docs
             </Button>
@@ -71,6 +70,7 @@ export function AppLayout() {
       <Container maxWidth="xl" sx={{ py: 3 }}>
         <Outlet />
       </Container>
+      <HelpDrawer floating />
     </Box>
   )
 }
