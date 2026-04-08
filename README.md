@@ -74,6 +74,50 @@ python -m src.data_management list-baselines
 python -m src.data_management list-provenance
 ```
 
+## 6. Unified API (Phase 1)
+
+Run:
+
+```bash
+python -m src.api --host 127.0.0.1 --port 8000
+```
+
+Key endpoints:
+
+- `GET /health`
+- `GET /api/overview`
+- `GET /api/orchestration/runs?limit=50`
+- `POST /api/orchestration/check-once?scenario=random_holdout`
+- `POST /api/retraining/run` body: `{"scenario":"random_holdout"}` or `{"scenario":"age_shift"}`
+- `GET /api/lifecycle/models`
+- `GET /api/lifecycle/experiments`
+- `GET /api/lifecycle/production`
+- `POST /api/lifecycle/promote` body: `{"lifecycle_model_id":1,"to_stage":"staging"}`
+- `GET /api/data/datasets`
+- `GET /api/data/baselines`
+- `GET /api/data/provenance`
+
+## 7. Custom dashboard (Phase 2, React)
+
+Frontend lives in `frontend/` and consumes the API-first backend (`/api/*`).
+
+```bash
+# Terminal A
+python -m src.api --host 127.0.0.1 --port 8000
+
+# Terminal B
+cd frontend
+npm install
+npm run dev
+```
+
+Optional API URL override (default is `http://127.0.0.1:8000`):
+
+```bash
+# in frontend/.env
+VITE_API_BASE_URL=http://127.0.0.1:8000
+```
+
 ```bash
 pytest
 ```

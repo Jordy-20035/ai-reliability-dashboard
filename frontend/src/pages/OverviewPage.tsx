@@ -1,0 +1,130 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Alert, Box, Button, Grid, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { getOverview, runDriftCheck } from '../api/endpoints'
+import { KpiCard } from '../components/KpiCard'
+import type { OverviewResponse, Scenario } from '../types'
+
+export function OverviewPage() {
+  const [overview, setOverview] = useState<OverviewResponse | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [scenario, setScenario] = useState<Scenario>('random_holdout')
+  const [message, setMessage] = useState<string | null>(null)
+
+  async function load() {
+    setLoading(true)
+    try {
+      const data = await getOverview()
+      setOverview(data)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void load()
+  }, [])
+
+  const chartData = useMemo(() => {
+    const s = overview?.last_run?.summary
+    if (!s) return []
+    return [
+      { name: 'High PSI', value: s.n_features_high_psi ?? 0 },
+      { name: 'KS Significant', value: s.n_numeric_ks_significant ?? 0 },
+      { name: 'Chi2 Significant', value: s.n_categorical_chi2_significant ?? 0 },
+    ]
+  }, [overview])
+
+  async function onRunCheck() {
+    setMessage(null)
+    setLoading(true)
+    try {
+      const res = await runDriftCheck(scenario)
+      setMessage(
+        `Drift check completed. triggered=${String(res.policy_triggered)} run_id=${String(res.run_id)}`,
+      )
+      await load()
+    } catch (e) {
+      setMessage(`Failed to run drift check: ${String(e)}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Stack spacing={2}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          System Overview
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Select
+            size="small"
+            value={scenario}
+            onChange={(e) => setScenario(e.target.value as Scenario)}
+          >
+            <MenuItem value="random_holdout">random_holdout</MenuItem>
+            <MenuItem value="age_shift">age_shift</MenuItem>
+          </Select>
+          <Button variant="contained" onClick={() => void onRunCheck()} disabled={loading}>
+            Run Drift Check
+          </Button>
+        </Box>
+      </Box>
+
+      {message && <Alert severity="info">{message}</Alert>}
+
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 3 }}>
+          <KpiCard label="Workflow Runs" value={overview?.kpis.n_runs ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 12, md: 3 }}>
+          <KpiCard label="Model Versions" value={overview?.kpis.n_models ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 12, md: 3 }}>
+          <KpiCard label="Dataset Versions" value={overview?.kpis.n_datasets ?? 0} />
+        </Grid>
+        <Grid size={{ xs: 12, md: 3 }}>
+          <KpiCard
+            label="Current Production Row"
+            value={overview?.kpis.production_model_row_id ?? '-'}
+            subtitle="from lifecycle settings"
+          />
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Paper sx={{ p: 2, height: 320 }}>
+            <Typography variant="h6" gutterBottom>
+              Latest Drift Signal Counts
+            </Typography>
+            <ResponsiveContainer width="100%" height="90%">
+              <BarChart data={chartData}>
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#60a5fa" />
+              </BarChart>
+            </ResponsiveContainer>
+          </Paper>
+        </Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper sx={{ p: 2, height: 320 }}>
+            <Typography variant="h6" gutterBottom>
+              Last Run Summary
+            </Typography>
+            <Box sx={{ fontSize: 14, lineHeight: 1.8 }}>
+              <div>Scenario: {overview?.last_run?.scenario ?? '-'}</div>
+              <div>Triggered: {String(overview?.last_run?.policy_triggered ?? false)}</div>
+              <div>Run ID: {overview?.last_run?.id ?? '-'}</div>
+              <div>Latest model: v{overview?.latest_model?.version_num ?? '-'}</div>
+              <div>Latest experiment: {overview?.latest_experiment?.name ?? '-'}</div>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
+    </Stack>
+  )
+}
+
