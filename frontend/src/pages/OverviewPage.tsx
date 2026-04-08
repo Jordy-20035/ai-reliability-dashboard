@@ -70,6 +70,11 @@ export function OverviewPage() {
   return (
     <Stack spacing={2}>
       {loading && <LinearProgress />}
+      <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 900 }}>
+        Start here for a snapshot of the system. KPIs summarize how much history you have.{' '}
+        <strong>Run Drift Check</strong> compares the selected scenario to the saved baseline and records a
+        workflow run—use the same control on Workflows for a fuller run history.
+      </Typography>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
           System Overview
@@ -83,7 +88,12 @@ export function OverviewPage() {
             <MenuItem value="random_holdout">random_holdout</MenuItem>
             <MenuItem value="age_shift">age_shift</MenuItem>
           </Select>
-          <Button variant="contained" onClick={() => void onRunCheck()} disabled={loading}>
+          <Button
+            variant="contained"
+            onClick={() => void onRunCheck()}
+            disabled={loading}
+            aria-label="Run drift check for selected scenario"
+          >
             Run Drift Check
           </Button>
         </Box>

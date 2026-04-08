@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Alert, LinearProgress, Paper, Stack, Typography } from '@mui/material'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
+import { EmptyGridOverlay } from '../components/EmptyGridOverlay'
 import { getDatasets, getProvenance } from '../api/endpoints'
 import type { DatasetVersion, ProvenanceRow } from '../types'
 import { getErrorMessage } from '../utils/errors'
@@ -59,6 +60,11 @@ export function DataPage() {
       <Typography variant="h4" sx={{ fontWeight: 700 }}>
         Data Versioning & Provenance
       </Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 960 }}>
+        This page is <strong>read-only</strong>: it shows registered dataset snapshots (hashes, row counts) and{' '}
+        <strong>provenance</strong> rows that tie each training run to data + code. You do not “upload” here in
+        the demo; versions appear when the data-management / training pipeline records them.
+      </Typography>
       <Paper sx={{ p: 1 }}>
         <Typography variant="h6" sx={{ p: 1 }}>
           Dataset Versions
@@ -71,6 +77,11 @@ export function DataPage() {
           autoHeight
           pageSizeOptions={[10, 20, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+          slots={{
+            noRowsOverlay: () => (
+              <EmptyGridOverlay message="No dataset versions recorded yet. Run data-management / training flows so snapshots and hashes are persisted." />
+            ),
+          }}
         />
       </Paper>
 
@@ -86,6 +97,11 @@ export function DataPage() {
           autoHeight
           pageSizeOptions={[10, 20, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+          slots={{
+            noRowsOverlay: () => (
+              <EmptyGridOverlay message="No provenance rows yet. These link experiments, model versions, and dataset snapshots after training is registered." />
+            ),
+          }}
         />
       </Paper>
     </Stack>

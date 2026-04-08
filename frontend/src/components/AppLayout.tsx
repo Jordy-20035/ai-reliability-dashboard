@@ -5,16 +5,38 @@ import {
   Button,
   Container,
   Toolbar,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { HelpDrawer } from './HelpDrawer'
 
 const nav = [
-  { label: 'Overview', to: '/', icon: <Analytics fontSize="small" /> },
-  { label: 'Workflows', to: '/workflows', icon: <Hub fontSize="small" /> },
-  { label: 'Models', to: '/models', icon: <ModelTraining fontSize="small" /> },
-  { label: 'Data', to: '/data', icon: <Dataset fontSize="small" /> },
-]
+  {
+    label: 'Overview',
+    to: '/',
+    icon: <Analytics fontSize="small" />,
+    hint: 'KPIs, latest drift counts, run a drift check against the baseline',
+  },
+  {
+    label: 'Workflows',
+    to: '/workflows',
+    icon: <Hub fontSize="small" />,
+    hint: 'History of orchestration runs and whether policy triggered',
+  },
+  {
+    label: 'Models',
+    to: '/models',
+    icon: <ModelTraining fontSize="small" />,
+    hint: 'Retrain, promote stages, see experiments and production pointer',
+  },
+  {
+    label: 'Data',
+    to: '/data',
+    icon: <Dataset fontSize="small" />,
+    hint: 'Dataset versions (hashes) and training provenance links',
+  },
+] as const
 
 export function AppLayout() {
   const location = useLocation()
@@ -27,17 +49,19 @@ export function AppLayout() {
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
             {nav.map((item) => (
-              <Button
-                key={item.to}
-                component={NavLink}
-                to={item.to}
-                startIcon={item.icon}
-                variant={location.pathname === item.to ? 'contained' : 'text'}
-                color={location.pathname === item.to ? 'secondary' : 'inherit'}
-              >
-                {item.label}
-              </Button>
+              <Tooltip key={item.to} title={item.hint} enterDelay={400}>
+                <Button
+                  component={NavLink}
+                  to={item.to}
+                  startIcon={item.icon}
+                  variant={location.pathname === item.to ? 'contained' : 'text'}
+                  color={location.pathname === item.to ? 'secondary' : 'inherit'}
+                >
+                  {item.label}
+                </Button>
+              </Tooltip>
             ))}
+            <HelpDrawer />
             <Button href="/docs" target="_blank" rel="noreferrer" variant="outlined" size="small">
               API docs
             </Button>

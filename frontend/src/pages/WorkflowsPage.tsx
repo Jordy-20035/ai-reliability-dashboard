@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Alert, Box, Button, LinearProgress, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
+import { EmptyGridOverlay } from '../components/EmptyGridOverlay'
 import { getRuns, runDriftCheck } from '../api/endpoints'
 import type { RunRecord, Scenario } from '../types'
 import { getErrorMessage } from '../utils/errors'
@@ -65,6 +66,11 @@ export function WorkflowsPage() {
   return (
     <Stack spacing={2}>
       {loading && <LinearProgress />}
+      <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 900 }}>
+        Each row is one <strong>orchestration run</strong>: drift (and related checks) plus whether the{' '}
+        <strong>policy triggered</strong> (the automation hook that can lead to retraining). Trigger a new run
+        here or from Overview—both call the same API.
+      </Typography>
       {error && (
         <Alert severity="error">
           Could not load runs — start API: <code>python -m src.api --port 8000</code> — {error}
@@ -83,7 +89,12 @@ export function WorkflowsPage() {
             <MenuItem value="random_holdout">random_holdout</MenuItem>
             <MenuItem value="age_shift">age_shift</MenuItem>
           </Select>
-          <Button variant="contained" onClick={() => void onRunCheck()} disabled={loading}>
+          <Button
+            variant="contained"
+            onClick={() => void onRunCheck()}
+            disabled={loading}
+            aria-label="Trigger drift orchestration run"
+          >
             Trigger Check
           </Button>
         </Box>
@@ -99,6 +110,11 @@ export function WorkflowsPage() {
           autoHeight
           pageSizeOptions={[10, 20, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+          slots={{
+            noRowsOverlay: () => (
+              <EmptyGridOverlay message="No workflow runs yet. Use Trigger Check (or Overview → Run Drift Check) after the API is running." />
+            ),
+          }}
         />
       </Paper>
     </Stack>

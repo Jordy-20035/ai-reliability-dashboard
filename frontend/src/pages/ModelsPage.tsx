@@ -12,6 +12,7 @@ import {
   Typography,
 } from '@mui/material'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
+import { EmptyGridOverlay } from '../components/EmptyGridOverlay'
 import { getExperiments, getModels, getProductionPointer, promoteModel, runRetrain } from '../api/endpoints'
 import type { LifecycleExperiment, LifecycleModel, Scenario } from '../types'
 import { getErrorMessage } from '../utils/errors'
@@ -111,8 +112,11 @@ export function ModelsPage() {
       <Typography variant="h4" sx={{ fontWeight: 700 }}>
         Model Lifecycle & Control
       </Typography>
-      <Typography variant="body2" color="text.secondary">
-        Current production model row id: {productionId ?? '-'}
+      <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 960 }}>
+        <strong>Trigger Retraining</strong> trains a new version and registers it in the lifecycle store. Then
+        pick a <strong>Row ID</strong> from the Model Versions table and <strong>Promote stage</strong> to move
+        it toward production (or archive). Production pointer:{' '}
+        <strong>{productionId ?? 'not set'}</strong>.
       </Typography>
       {message && <Alert severity="info">{message}</Alert>}
 
@@ -125,7 +129,12 @@ export function ModelsPage() {
           <MenuItem value="random_holdout">random_holdout</MenuItem>
           <MenuItem value="age_shift">age_shift</MenuItem>
         </Select>
-        <Button variant="contained" onClick={() => void onRetrain()} disabled={loading}>
+        <Button
+          variant="contained"
+          onClick={() => void onRetrain()}
+          disabled={loading}
+          aria-label="Trigger model retraining for selected scenario"
+        >
           Trigger Retraining
         </Button>
         <TextField
@@ -139,7 +148,12 @@ export function ModelsPage() {
           <MenuItem value="production">production</MenuItem>
           <MenuItem value="archived">archived</MenuItem>
         </Select>
-        <Button variant="outlined" onClick={() => void onPromote()} disabled={loading}>
+        <Button
+          variant="outlined"
+          onClick={() => void onPromote()}
+          disabled={loading}
+          aria-label="Promote lifecycle model row to selected stage"
+        >
           Promote Stage
         </Button>
       </Box>
@@ -156,6 +170,11 @@ export function ModelsPage() {
           autoHeight
           pageSizeOptions={[10, 20, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+          slots={{
+            noRowsOverlay: () => (
+              <EmptyGridOverlay message="No registered models yet. Run Trigger Retraining to create a version, or seed data via the training CLI/API." />
+            ),
+          }}
         />
       </Paper>
 
@@ -171,6 +190,11 @@ export function ModelsPage() {
           autoHeight
           pageSizeOptions={[10, 20, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+          slots={{
+            noRowsOverlay: () => (
+              <EmptyGridOverlay message="No experiments yet. They appear when training runs register lineage (e.g. after retraining)." />
+            ),
+          }}
         />
       </Paper>
     </Stack>
