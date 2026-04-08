@@ -73,11 +73,13 @@ class Orchestrator:
             test_size=self.config.test_size,
             random_state=self.config.random_state,
             scenario=self.config.scenario,
+            current_csv_path=self.config.current_csv_path,
         )
         labeled_ref, labeled_cur = split_labeled_reference_current(
             test_size=self.config.test_size,
             random_state=self.config.random_state,
             scenario=self.config.scenario,
+            current_csv_path=self.config.current_csv_path,
         )
         assert self.config.baseline_path is not None
         baseline = fit_or_load_baseline(ref, self.config.baseline_path)

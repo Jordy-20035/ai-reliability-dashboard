@@ -30,12 +30,14 @@ class RetrainRequest(BaseModel):
 def _build_orchestrator(
     *,
     scenario: str,
+    current_csv_path: str | None = None,
     max_high_psi: int = 0,
     max_ks: int = 2,
     max_chi2: int = 3,
 ) -> Orchestrator:
     cfg = OrchestratorConfig(
         scenario=scenario,
+        current_csv_path=current_csv_path,
         max_high_psi_features=max_high_psi,
         max_ks_significant_numeric=max_ks,
         max_chi2_significant_categorical=max_chi2,
@@ -114,17 +116,22 @@ def create_app() -> FastAPI:
     @app.post("/api/orchestration/check-once")
     def orchestration_check_once(
         scenario: str = Query(default="random_holdout"),
+        current_csv_path: str | None = Query(default=None),
         max_high_psi: int = Query(default=0, ge=0),
         max_ks: int = Query(default=2, ge=0),
         max_chi2: int = Query(default=3, ge=0),
     ) -> dict:
         orch = _build_orchestrator(
             scenario=scenario,
+            current_csv_path=current_csv_path,
             max_high_psi=max_high_psi,
             max_ks=max_ks,
             max_chi2=max_chi2,
         )
-        result = orch.run_pipeline()
+        try:
+            result = orch.run_pipeline()
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
         return asdict(result)
 
     @app.post("/api/retraining/run")

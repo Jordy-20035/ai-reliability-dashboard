@@ -28,3 +28,9 @@ def test_ops_stats_shape() -> None:
     assert "total_runs" in body["orchestration"]
     assert "trigger_rate" in body["orchestration"]
 
+
+def test_incoming_csv_requires_path_for_check_once() -> None:
+    client = TestClient(app)
+    r = client.post("/api/orchestration/check-once?scenario=incoming_csv")
+    assert r.status_code == 400
+

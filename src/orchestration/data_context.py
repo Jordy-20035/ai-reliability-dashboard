@@ -23,6 +23,7 @@ def split_reference_current(
     test_size: float,
     random_state: int,
     scenario: str,
+    current_csv_path: str | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     reference = training slice; current = monitoring slice.
@@ -30,6 +31,7 @@ def split_reference_current(
     scenario:
       random_holdout — same population, small drift expected.
       age_shift — current = rows with age >= 40 (strong drift vs reference).
+      incoming_csv — current = rows loaded from external CSV path.
     """
     ref, cur = train_test_split(X, test_size=test_size, random_state=random_state)
     if scenario == "random_holdout":
@@ -39,6 +41,13 @@ def split_reference_current(
         mask = full["age"] >= 40
         cur_shifted = full.loc[mask, FEATURE_COLS].reset_index(drop=True)
         return ref.reset_index(drop=True), cur_shifted
+    if scenario == "incoming_csv":
+        if not current_csv_path:
+            raise ValueError(
+                "incoming_csv scenario requires current_csv_path (or ORCH_CURRENT_CSV_PATH env var)"
+            )
+        current_full = load_adult_csv(current_csv_path)
+        return ref.reset_index(drop=True), current_full[FEATURE_COLS].reset_index(drop=True)
     raise ValueError(f"Unknown scenario: {scenario}")
 
 
@@ -47,7 +56,8 @@ def split_labeled_reference_current(
     test_size: float,
     random_state: int,
     scenario: str,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+    current_csv_path: str | None = None,
+) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
     """
     Same split as `split_reference_current`, but full rows including `income` target.
 
@@ -67,6 +77,18 @@ def split_labeled_reference_current(
         mask = full["age"] >= 40
         cur_full = full.loc[mask].reset_index(drop=True)
         return ref_full, cur_full
+    if scenario == "incoming_csv":
+        if not current_csv_path:
+            raise ValueError(
+                "incoming_csv scenario requires current_csv_path (or ORCH_CURRENT_CSV_PATH env var)"
+            )
+        ref_full, _ = train_test_split(
+            full, test_size=test_size, random_state=random_state
+        )
+        cur_full = load_adult_csv(current_csv_path)
+        if "income" not in cur_full.columns:
+            return ref_full.reset_index(drop=True), None
+        return ref_full.reset_index(drop=True), cur_full.reset_index(drop=True)
     raise ValueError(f"Unknown scenario: {scenario}")
 
 

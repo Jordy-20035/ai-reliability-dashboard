@@ -21,6 +21,7 @@ Runs drift checks **on a schedule** or **on demand** (HTTP), evaluates **thresho
 python -m src.orchestration init-baseline
 python -m src.orchestration check-once --scenario random_holdout
 python -m src.orchestration check-once --scenario age_shift
+python -m src.orchestration check-once --scenario incoming_csv --current-csv-path ./data/raw/adult.csv
 python -m src.orchestration history
 # python -m src.orchestration serve --interval 60
 # python -m src.orchestration serve-http --port 8000
@@ -89,6 +90,7 @@ Key endpoints:
 - `GET /api/orchestration/runs?limit=50`
 - `GET /api/ops/stats`
 - `POST /api/orchestration/check-once?scenario=random_holdout`
+- `POST /api/orchestration/check-once?scenario=incoming_csv&current_csv_path=./data/raw/adult.csv`
 - `POST /api/retraining/run` body: `{"scenario":"random_holdout"}` or `{"scenario":"age_shift"}`
 - `GET /api/lifecycle/models`
 - `GET /api/lifecycle/experiments`
@@ -132,6 +134,7 @@ The orchestration layer now supports operational env vars:
 - `ORCH_ALERT_WEBHOOK_URL` — optional webhook called when policy triggers.
 - `ORCH_ENABLE_AUTO_RETRAIN` — `true/false`; disable side-effect retraining for monitor-only mode.
 - `ORCH_SCHEDULER_INTERVAL` — scheduler interval seconds.
+- `ORCH_CURRENT_CSV_PATH` — incoming batch CSV path for `scenario=incoming_csv`.
 
 CLI also accepts:
 

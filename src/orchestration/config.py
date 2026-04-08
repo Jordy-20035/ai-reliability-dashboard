@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Literal
 
-Scenario = Literal["random_holdout", "age_shift"]
+Scenario = Literal["random_holdout", "age_shift", "incoming_csv"]
 
 
 def project_root() -> Path:
@@ -23,6 +23,7 @@ class OrchestratorConfig:
     sqlite_path: Path | None = None
     # How to build "current" data for monitoring (demo / thesis)
     scenario: Scenario = "random_holdout"
+    current_csv_path: str | None = None
     test_size: float = 0.3
     random_state: int = 42
     # Policy thresholds (see DriftThresholdPolicy)
@@ -39,6 +40,8 @@ class OrchestratorConfig:
             self.baseline_path = self.root / "artifacts" / "baseline_profile.json"
         if self.sqlite_path is None:
             self.sqlite_path = self.root / "artifacts" / "orchestration.db"
+        if self.current_csv_path is None:
+            self.current_csv_path = (os.getenv("ORCH_CURRENT_CSV_PATH") or "").strip() or None
         if self.alert_webhook_url is None:
             self.alert_webhook_url = (os.getenv("ORCH_ALERT_WEBHOOK_URL") or "").strip() or None
         self.enable_auto_retrain = _env_bool("ORCH_ENABLE_AUTO_RETRAIN", self.enable_auto_retrain)
