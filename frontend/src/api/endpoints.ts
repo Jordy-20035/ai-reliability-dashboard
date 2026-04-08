@@ -7,6 +7,7 @@ import type {
   OverviewResponse,
   ProvenanceRow,
   RunRecord,
+  Scenario,
 } from '../types'
 
 export async function getOverview() {
@@ -21,9 +22,13 @@ export async function getRuns(limit = 50) {
   return res.data
 }
 
-export async function runDriftCheck(scenario: 'random_holdout' | 'age_shift') {
+export async function runDriftCheck(scenario: Scenario, currentCsvPath?: string) {
+  const params: Record<string, string> = { scenario }
+  if (scenario === 'incoming_csv' && currentCsvPath?.trim()) {
+    params.current_csv_path = currentCsvPath.trim()
+  }
   const res = await api.post('/api/orchestration/check-once', null, {
-    params: { scenario },
+    params,
   })
   return res.data
 }

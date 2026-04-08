@@ -1,4 +1,4 @@
-export type Scenario = 'random_holdout' | 'age_shift'
+export type Scenario = 'random_holdout' | 'age_shift' | 'incoming_csv'
 
 export interface ApiListResponse<T> {
   items: T[]

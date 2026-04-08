@@ -14,8 +14,9 @@ import {
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import { EmptyGridOverlay } from '../components/EmptyGridOverlay'
 import { getExperiments, getModels, getProductionPointer, promoteModel, runRetrain } from '../api/endpoints'
-import type { LifecycleExperiment, LifecycleModel, Scenario } from '../types'
+import type { LifecycleExperiment, LifecycleModel } from '../types'
 import { getErrorMessage } from '../utils/errors'
+type RetrainScenario = 'random_holdout' | 'age_shift'
 
 const modelCols: GridColDef<LifecycleModel>[] = [
   { field: 'id', headerName: 'Row ID', width: 90 },
@@ -45,7 +46,7 @@ export function ModelsPage() {
   const [experiments, setExperiments] = useState<LifecycleExperiment[]>([])
   const [productionId, setProductionId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
-  const [scenario, setScenario] = useState<Scenario>('random_holdout')
+  const [scenario, setScenario] = useState<RetrainScenario>('random_holdout')
   const [promoteId, setPromoteId] = useState('')
   const [promoteStage, setPromoteStage] = useState('staging')
   const [message, setMessage] = useState<string | null>(null)
@@ -124,7 +125,7 @@ export function ModelsPage() {
         <Select
           size="small"
           value={scenario}
-          onChange={(e) => setScenario(e.target.value as Scenario)}
+          onChange={(e) => setScenario(e.target.value as RetrainScenario)}
         >
           <MenuItem value="random_holdout">random_holdout</MenuItem>
           <MenuItem value="age_shift">age_shift</MenuItem>

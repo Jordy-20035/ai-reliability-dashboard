@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Alert, Box, Button, LinearProgress, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, LinearProgress, MenuItem, Paper, Select, Stack, TextField, Typography } from '@mui/material'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import { EmptyGridOverlay } from '../components/EmptyGridOverlay'
 import { getRuns, runDriftCheck } from '../api/endpoints'
@@ -30,6 +30,7 @@ export function WorkflowsPage() {
   const [rows, setRows] = useState<RunRecord[]>([])
   const [loading, setLoading] = useState(false)
   const [scenario, setScenario] = useState<Scenario>('random_holdout')
+  const [currentCsvPath, setCurrentCsvPath] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -51,10 +52,14 @@ export function WorkflowsPage() {
   }, [])
 
   async function onRunCheck() {
+    if (scenario === 'incoming_csv' && !currentCsvPath.trim()) {
+      setMessage('Please provide a current CSV path for incoming_csv scenario.')
+      return
+    }
     setLoading(true)
     setMessage(null)
     try {
-      const res = await runDriftCheck(scenario)
+      const res = await runDriftCheck(scenario, currentCsvPath)
       setMessage(`Run complete (run_id=${String(res.run_id)} triggered=${String(res.policy_triggered)})`)
       await load()
     } catch (e) {
@@ -88,7 +93,18 @@ export function WorkflowsPage() {
           >
             <MenuItem value="random_holdout">random_holdout</MenuItem>
             <MenuItem value="age_shift">age_shift</MenuItem>
+            <MenuItem value="incoming_csv">incoming_csv</MenuItem>
           </Select>
+          {scenario === 'incoming_csv' && (
+            <TextField
+              size="small"
+              label="Current CSV Path"
+              placeholder="./data/raw/adult.csv"
+              value={currentCsvPath}
+              onChange={(e) => setCurrentCsvPath(e.target.value)}
+              sx={{ minWidth: 300 }}
+            />
+          )}
           <Button
             variant="contained"
             onClick={() => void onRunCheck()}

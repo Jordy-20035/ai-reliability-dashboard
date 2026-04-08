@@ -9,6 +9,7 @@ import {
   Paper,
   Select,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material'
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -21,6 +22,7 @@ export function OverviewPage() {
   const [overview, setOverview] = useState<OverviewResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [scenario, setScenario] = useState<Scenario>('random_holdout')
+  const [currentCsvPath, setCurrentCsvPath] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -52,10 +54,14 @@ export function OverviewPage() {
   }, [overview])
 
   async function onRunCheck() {
+    if (scenario === 'incoming_csv' && !currentCsvPath.trim()) {
+      setMessage('Please provide a current CSV path for incoming_csv scenario.')
+      return
+    }
     setMessage(null)
     setLoading(true)
     try {
-      const res = await runDriftCheck(scenario)
+      const res = await runDriftCheck(scenario, currentCsvPath)
       setMessage(
         `Drift check completed. triggered=${String(res.policy_triggered)} run_id=${String(res.run_id)}`,
       )
@@ -87,7 +93,18 @@ export function OverviewPage() {
           >
             <MenuItem value="random_holdout">random_holdout</MenuItem>
             <MenuItem value="age_shift">age_shift</MenuItem>
+            <MenuItem value="incoming_csv">incoming_csv</MenuItem>
           </Select>
+          {scenario === 'incoming_csv' && (
+            <TextField
+              size="small"
+              label="Current CSV Path"
+              placeholder="./data/raw/adult.csv"
+              value={currentCsvPath}
+              onChange={(e) => setCurrentCsvPath(e.target.value)}
+              sx={{ minWidth: 300 }}
+            />
+          )}
           <Button
             variant="contained"
             onClick={() => void onRunCheck()}
