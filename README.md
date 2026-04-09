@@ -172,4 +172,4 @@ docker compose up --build
 Then:
 
 - API: `http://localhost:8000/docs`
-- Dashboard: `http://localhost:8080`
+- Dashboard: `http://localhost:8090`
