@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from functools import lru_cache
+from pathlib import Path
+from typing import Any
 
+import joblib
+import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from src.data_management.service import default_data_management_service
+from src.drift_detection.schema import ADULT_CATEGORICAL_FEATURES, ADULT_NUMERIC_FEATURES
 from src.lifecycle.service import default_lifecycle_service
 from src.lifecycle.stages import DeploymentStage
 from src.orchestration.config import OrchestratorConfig
@@ -25,6 +31,25 @@ class PromoteRequest(BaseModel):
 
 class RetrainRequest(BaseModel):
     scenario: str = "random_holdout"
+
+
+class PredictRequest(BaseModel):
+    rows: list[dict[str, Any]]
+
+
+def _expected_feature_columns() -> list[str]:
+    return list(ADULT_NUMERIC_FEATURES) + list(ADULT_CATEGORICAL_FEATURES)
+
+
+@lru_cache(maxsize=16)
+def _load_model_cached(artifact_path: str, mtime_ns: int):
+    # mtime_ns is part of the cache key so model file updates invalidate cache.
+    del mtime_ns
+    return joblib.load(artifact_path)
+
+
+def _load_model_from_artifact(artifact_path: Path):
+    return _load_model_cached(str(artifact_path), artifact_path.stat().st_mtime_ns)
 
 
 def _build_orchestrator(
@@ -150,6 +175,67 @@ def create_app() -> FastAPI:
             "promote_reason": result.promote_reason,
             "metrics": result.metrics,
             "artifact_path": str(result.artifact_path),
+        }
+
+    @app.post("/api/inference/predict")
+    def inference_predict(req: PredictRequest) -> dict:
+        if not req.rows:
+            raise HTTPException(status_code=400, detail="rows must contain at least one record")
+        expected = _expected_feature_columns()
+        X = pd.DataFrame(req.rows)
+        missing = [c for c in expected if c not in X.columns]
+        if missing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Missing required feature columns: {', '.join(missing)}",
+            )
+        X = X[expected]
+
+        lifecycle = default_lifecycle_service()
+        production_id = lifecycle.get_production_model_id()
+        if production_id is None:
+            raise HTTPException(
+                status_code=409,
+                detail="No production model is set. Promote a model to production first.",
+            )
+        model_row = lifecycle.get_model_by_id(production_id)
+        if model_row is None:
+            raise HTTPException(status_code=404, detail=f"Production model row {production_id} not found")
+
+        artifact_path = Path(model_row.artifact_path)
+        if not artifact_path.is_file():
+            raise HTTPException(
+                status_code=500,
+                detail=f"Production artifact not found at {artifact_path.as_posix()}",
+            )
+        model = _load_model_from_artifact(artifact_path)
+        try:
+            preds = model.predict(X)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Inference failed: {e}") from e
+
+        probs: list[float] | None = None
+        if hasattr(model, "predict_proba"):
+            try:
+                arr = model.predict_proba(X)
+                probs = [float(row[-1]) for row in arr]
+            except Exception:
+                probs = None
+
+        pred_values = preds.tolist() if hasattr(preds, "tolist") else list(preds)
+        pred_labels = [int(p) if str(p).isdigit() else p for p in pred_values]
+        pred_income = [
+            ">50K" if str(p) in {"1", "1.0"} or p == 1 else "<=50K"
+            for p in pred_labels
+        ]
+
+        return {
+            "model_row_id": model_row.id,
+            "model_version_num": model_row.version_num,
+            "n_rows": len(X),
+            "predictions": pred_labels,
+            "predicted_income_class": pred_income,
+            "positive_class_probability": probs,
         }
 
     @app.get("/api/lifecycle/models")

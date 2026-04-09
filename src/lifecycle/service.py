@@ -202,6 +202,16 @@ class LifecycleService:
                 ).fetchall()
         return [self._row_to_model(r) for r in rows]
 
+    def get_model_by_id(self, model_row_id: int) -> ModelRecord | None:
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM model_versions WHERE id = ?",
+                (model_row_id,),
+            ).fetchone()
+        if not row:
+            return None
+        return self._row_to_model(row)
+
     def list_experiments(self, limit: int = 50) -> list[ExperimentRecord]:
         with self._conn() as conn:
             rows = conn.execute(

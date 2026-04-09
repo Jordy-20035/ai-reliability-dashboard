@@ -92,6 +92,7 @@ Key endpoints:
 - `POST /api/orchestration/check-once?scenario=random_holdout`
 - `POST /api/orchestration/check-once?scenario=incoming_csv&current_csv_path=./data/raw/adult.csv`
 - `POST /api/retraining/run` body: `{"scenario":"random_holdout"}` or `{"scenario":"age_shift"}`
+- `POST /api/inference/predict` body: `{"rows":[{...adult feature columns...}]}`
 - `GET /api/lifecycle/models`
 - `GET /api/lifecycle/experiments`
 - `GET /api/lifecycle/production`
