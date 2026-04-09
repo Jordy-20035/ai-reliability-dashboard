@@ -75,3 +75,12 @@ export interface OverviewResponse {
   latest_experiment: LifecycleExperiment | null
 }
 
+export interface InferenceResponse {
+  model_row_id: number
+  model_version_num: number
+  n_rows: number
+  predictions: Array<number | string>
+  predicted_income_class: string[]
+  positive_class_probability: number[] | null
+}
+

@@ -36,6 +36,12 @@ const nav = [
     icon: <Dataset fontSize="small" />,
     hint: 'Dataset versions (hashes) and training provenance links',
   },
+  {
+    label: 'Inference',
+    to: '/inference',
+    icon: <Analytics fontSize="small" />,
+    hint: 'Run prediction against the current production model pointer',
+  },
 ] as const
 
 export function AppLayout() {

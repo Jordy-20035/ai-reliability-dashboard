@@ -4,6 +4,7 @@ import type {
   DatasetVersion,
   LifecycleExperiment,
   LifecycleModel,
+  InferenceResponse,
   OverviewResponse,
   ProvenanceRow,
   RunRecord,
@@ -74,6 +75,11 @@ export async function getProvenance(limit = 100) {
   const res = await api.get<ApiListResponse<ProvenanceRow>>('/api/data/provenance', {
     params: { limit },
   })
+  return res.data
+}
+
+export async function predictProduction(rows: Array<Record<string, unknown>>) {
+  const res = await api.post<InferenceResponse>('/api/inference/predict', { rows })
   return res.data
 }
 
