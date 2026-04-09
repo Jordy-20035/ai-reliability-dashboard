@@ -73,8 +73,8 @@ export function WorkflowsPage() {
       {loading && <LinearProgress />}
       <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 900 }}>
         Each row is one <strong>orchestration run</strong>: drift (and related checks) plus whether the{' '}
-        <strong>policy triggered</strong> (the automation hook that can lead to retraining). Trigger a new run
-        here or from Overview—both call the same API.
+        <strong>policy triggered</strong> (the automation hook that can lead to retraining). You can run a new
+        check here as an operator shortcut; it is the <strong>same check</strong> used on Overview.
       </Typography>
       {error && (
         <Alert severity="error">
@@ -109,12 +109,15 @@ export function WorkflowsPage() {
             variant="contained"
             onClick={() => void onRunCheck()}
             disabled={loading}
-            aria-label="Trigger drift orchestration run"
+            aria-label="Run new workflow check"
           >
-            Trigger Check
+            Run New Workflow
           </Button>
         </Box>
       </Box>
+      <Typography variant="caption" color="text.secondary">
+        Same action as Overview → Run Drift Check; results are written to this table.
+      </Typography>
       {message && <Alert severity="info">{message}</Alert>}
 
       <Paper sx={{ p: 1 }}>
