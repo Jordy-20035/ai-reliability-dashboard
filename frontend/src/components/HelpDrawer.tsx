@@ -171,6 +171,69 @@ export function HelpDrawer({ wide = true, floating = false }: HelpDrawerProps) {
               </TableContainer>
             </Section>
 
+            <Section title="Glossary (plain English)">
+              <TableContainer component={Paper} variant="outlined">
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Term</TableCell>
+                      <TableCell>What it means here</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>Scenario</TableCell>
+                      <TableCell>How current/incoming data is chosen for a check or retrain run.</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>random_holdout</TableCell>
+                      <TableCell>Reference/current are random splits from same dataset (mostly healthy case).</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>age_shift</TableCell>
+                      <TableCell>Current data is intentionally shifted (age &gt;= 40) to simulate drift.</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>incoming_csv</TableCell>
+                      <TableCell>Current data comes from an external CSV batch path (real incoming mode).</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Run Drift Check / Run New Workflow</TableCell>
+                      <TableCell>Same backend action from two pages; each click creates one run record.</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Trigger Retraining</TableCell>
+                      <TableCell>Manual retrain action (separate from auto retrain when policy triggers).</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>development stage</TableCell>
+                      <TableCell>Newly created candidate model version; not approved for live traffic yet.</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>staging stage</TableCell>
+                      <TableCell>Pre-production validation stage before final promotion.</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>production stage</TableCell>
+                      <TableCell>Version marked as the live model by lifecycle production pointer.</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>archived stage</TableCell>
+                      <TableCell>Retired version kept for history and audit.</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Production pointer</TableCell>
+                      <TableCell>The model row ID the system treats as current production.</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                Note: Models retraining currently supports random_holdout and age_shift only; incoming_csv is
+                available for drift/orchestration checks.
+              </Typography>
+            </Section>
+
             <Divider />
 
             <Typography variant="body2" color="text.secondary">
