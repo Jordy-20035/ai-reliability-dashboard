@@ -1,4 +1,7 @@
-version: "3.9"
+# After changing Python under src/ or the React app, rebuild images — restarts alone reuse old layers:
+#   docker compose build --no-cache
+#   docker compose up -d
+# Or: docker compose up -d --build
 
 services:
   api:
@@ -15,6 +18,9 @@ services:
       ORCH_ENABLE_AUTO_RETRAIN: ${ORCH_ENABLE_AUTO_RETRAIN:-true}
       ORCH_SCHEDULER_INTERVAL: ${ORCH_SCHEDULER_INTERVAL:-300}
       ORCH_CURRENT_CSV_PATH: ${ORCH_CURRENT_CSV_PATH:-}
+      FRAUD_D1_PATH: ${FRAUD_D1_PATH:-}
+      FRAUD_D2_PATH: ${FRAUD_D2_PATH:-}
+      FRAUD_D3_PATH: ${FRAUD_D3_PATH:-}
     restart: unless-stopped
 
   scheduler:
@@ -31,6 +37,9 @@ services:
       ORCH_ENABLE_AUTO_RETRAIN: ${ORCH_ENABLE_AUTO_RETRAIN:-true}
       ORCH_SCHEDULER_INTERVAL: ${ORCH_SCHEDULER_INTERVAL:-300}
       ORCH_CURRENT_CSV_PATH: ${ORCH_CURRENT_CSV_PATH:-}
+      FRAUD_D1_PATH: ${FRAUD_D1_PATH:-}
+      FRAUD_D2_PATH: ${FRAUD_D2_PATH:-}
+      FRAUD_D3_PATH: ${FRAUD_D3_PATH:-}
     restart: unless-stopped
 
   frontend:
