@@ -1,4 +1,12 @@
-export type Scenario = 'random_holdout' | 'age_shift' | 'incoming_csv'
+export type Scenario =
+  | 'random_holdout'
+  | 'age_shift'
+  | 'incoming_csv'
+  | 'fraud_d1_vs_d2'
+  | 'fraud_d2_vs_d3'
+  | 'fraud_d1_vs_d3'
+
+export type RetrainScenario = 'random_holdout' | 'age_shift' | 'fraud_retrain_d1_d2'
 
 export interface ApiListResponse<T> {
   items: T[]
@@ -80,7 +88,9 @@ export interface InferenceResponse {
   model_version_num: number
   n_rows: number
   predictions: Array<number | string>
-  predicted_income_class: string[]
+  profile: 'adult' | 'fraud'
+  predicted_income_class?: string[]
+  predicted_fraud_label?: string[]
   positive_class_probability: number[] | null
 }
 

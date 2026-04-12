@@ -7,7 +7,21 @@ import os
 from pathlib import Path
 from typing import Literal
 
-Scenario = Literal["random_holdout", "age_shift", "incoming_csv"]
+Scenario = Literal[
+    "random_holdout",
+    "age_shift",
+    "incoming_csv",
+    "fraud_d1_vs_d2",
+    "fraud_d2_vs_d3",
+    "fraud_d1_vs_d3",
+]
+
+# Retraining-only (merge D1+D2 fraud CSVs); not used by drift orchestration loop.
+RetrainScenario = Literal[
+    "random_holdout",
+    "age_shift",
+    "fraud_retrain_d1_d2",
+]
 
 
 def project_root() -> Path:
@@ -34,6 +48,11 @@ class OrchestratorConfig:
     alert_webhook_url: str | None = None
     enable_auto_retrain: bool = True
     scheduler_interval_seconds: int = 300
+    # Credit card fraud temporal CSVs (from notebook export or manual split)
+    fraud_d1_path: str | None = None
+    fraud_d2_path: str | None = None
+    fraud_d3_path: str | None = None
+    fraud_baseline_path: Path | None = None
 
     def __post_init__(self) -> None:
         if self.baseline_path is None:
@@ -49,6 +68,14 @@ class OrchestratorConfig:
             "ORCH_SCHEDULER_INTERVAL",
             self.scheduler_interval_seconds,
         )
+        if self.fraud_d1_path is None:
+            self.fraud_d1_path = (os.getenv("FRAUD_D1_PATH") or "").strip() or None
+        if self.fraud_d2_path is None:
+            self.fraud_d2_path = (os.getenv("FRAUD_D2_PATH") or "").strip() or None
+        if self.fraud_d3_path is None:
+            self.fraud_d3_path = (os.getenv("FRAUD_D3_PATH") or "").strip() or None
+        if self.fraud_baseline_path is None:
+            self.fraud_baseline_path = self.root / "artifacts" / "baseline_profile_fraud.json"
 
 
 def _env_bool(key: str, default: bool) -> bool:

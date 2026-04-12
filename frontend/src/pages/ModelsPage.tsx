@@ -14,9 +14,8 @@ import {
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import { EmptyGridOverlay } from '../components/EmptyGridOverlay'
 import { getExperiments, getModels, getProductionPointer, promoteModel, runRetrain } from '../api/endpoints'
-import type { LifecycleExperiment, LifecycleModel } from '../types'
+import type { LifecycleExperiment, LifecycleModel, RetrainScenario } from '../types'
 import { getErrorMessage } from '../utils/errors'
-type RetrainScenario = 'random_holdout' | 'age_shift'
 
 const modelCols: GridColDef<LifecycleModel>[] = [
   { field: 'id', headerName: 'Row ID', width: 90 },
@@ -47,6 +46,8 @@ export function ModelsPage() {
   const [productionId, setProductionId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [scenario, setScenario] = useState<RetrainScenario>('random_holdout')
+  const [fraudD1Path, setFraudD1Path] = useState('')
+  const [fraudD2Path, setFraudD2Path] = useState('')
   const [promoteId, setPromoteId] = useState('')
   const [promoteStage, setPromoteStage] = useState('staging')
   const [message, setMessage] = useState<string | null>(null)
@@ -75,7 +76,10 @@ export function ModelsPage() {
     setMessage(null)
     setLoading(true)
     try {
-      const res = await runRetrain(scenario)
+      const res = await runRetrain(scenario, {
+        fraudD1Path,
+        fraudD2Path,
+      })
       setMessage(`Retrain done: v${String(res.version)} promoted=${String(res.promoted)}`)
       await load()
     } catch (e) {
@@ -114,9 +118,9 @@ export function ModelsPage() {
         Model Lifecycle & Control
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 960 }}>
-        <strong>Trigger Retraining</strong> trains a new version and registers it in the lifecycle store. Then
-        pick a <strong>Row ID</strong> from the Model Versions table and <strong>Promote stage</strong> to move
-        it toward production (or archive). Production pointer:{' '}
+        <strong>Trigger Retraining</strong> trains a new version (Adult holdout splits or fraud D1+D2 merge) and
+        registers it in the lifecycle store. Then pick a <strong>Row ID</strong> from the Model Versions table
+        and <strong>Promote stage</strong> to move it toward production (or archive). Production pointer:{' '}
         <strong>{productionId ?? 'not set'}</strong>.
       </Typography>
       {message && <Alert severity="info">{message}</Alert>}
@@ -129,7 +133,28 @@ export function ModelsPage() {
         >
           <MenuItem value="random_holdout">random_holdout</MenuItem>
           <MenuItem value="age_shift">age_shift</MenuItem>
+          <MenuItem value="fraud_retrain_d1_d2">fraud_retrain_d1_d2</MenuItem>
         </Select>
+        {scenario === 'fraud_retrain_d1_d2' && (
+          <>
+            <TextField
+              size="small"
+              label="D1 CSV (optional)"
+              placeholder="FRAUD_D1_PATH"
+              value={fraudD1Path}
+              onChange={(e) => setFraudD1Path(e.target.value)}
+              sx={{ minWidth: 220 }}
+            />
+            <TextField
+              size="small"
+              label="D2 CSV (optional)"
+              placeholder="FRAUD_D2_PATH"
+              value={fraudD2Path}
+              onChange={(e) => setFraudD2Path(e.target.value)}
+              sx={{ minWidth: 220 }}
+            />
+          </>
+        )}
         <Button
           variant="contained"
           onClick={() => void onRetrain()}

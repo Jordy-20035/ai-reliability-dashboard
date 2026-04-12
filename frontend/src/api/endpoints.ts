@@ -7,6 +7,7 @@ import type {
   InferenceResponse,
   OverviewResponse,
   ProvenanceRow,
+  RetrainScenario,
   RunRecord,
   Scenario,
 } from '../types'
@@ -23,19 +24,36 @@ export async function getRuns(limit = 50) {
   return res.data
 }
 
-export async function runDriftCheck(scenario: Scenario, currentCsvPath?: string) {
+export type DriftCheckOptions = {
+  currentCsvPath?: string
+  fraudD1Path?: string
+  fraudD2Path?: string
+  fraudD3Path?: string
+}
+
+export async function runDriftCheck(scenario: Scenario, opts?: DriftCheckOptions) {
   const params: Record<string, string> = { scenario }
-  if (scenario === 'incoming_csv' && currentCsvPath?.trim()) {
-    params.current_csv_path = currentCsvPath.trim()
+  if (scenario === 'incoming_csv' && opts?.currentCsvPath?.trim()) {
+    params.current_csv_path = opts.currentCsvPath.trim()
   }
+  if (opts?.fraudD1Path?.trim()) params.fraud_d1_path = opts.fraudD1Path.trim()
+  if (opts?.fraudD2Path?.trim()) params.fraud_d2_path = opts.fraudD2Path.trim()
+  if (opts?.fraudD3Path?.trim()) params.fraud_d3_path = opts.fraudD3Path.trim()
   const res = await api.post('/api/orchestration/check-once', null, {
     params,
   })
   return res.data
 }
 
-export async function runRetrain(scenario: 'random_holdout' | 'age_shift') {
-  const res = await api.post('/api/retraining/run', { scenario })
+export type RetrainRunOptions = { fraudD1Path?: string; fraudD2Path?: string }
+
+export async function runRetrain(scenario: RetrainScenario, opts?: RetrainRunOptions) {
+  const body: Record<string, unknown> = { scenario }
+  if (scenario === 'fraud_retrain_d1_d2') {
+    if (opts?.fraudD1Path?.trim()) body.fraud_d1_path = opts.fraudD1Path.trim()
+    if (opts?.fraudD2Path?.trim()) body.fraud_d2_path = opts.fraudD2Path.trim()
+  }
+  const res = await api.post('/api/retraining/run', body)
   return res.data
 }
 
@@ -78,8 +96,11 @@ export async function getProvenance(limit = 100) {
   return res.data
 }
 
-export async function predictProduction(rows: Array<Record<string, unknown>>) {
-  const res = await api.post<InferenceResponse>('/api/inference/predict', { rows })
+export async function predictProduction(
+  rows: Array<Record<string, unknown>>,
+  profile: 'adult' | 'fraud' = 'adult',
+) {
+  const res = await api.post<InferenceResponse>('/api/inference/predict', { rows, profile })
   return res.data
 }
 

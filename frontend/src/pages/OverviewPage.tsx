@@ -23,6 +23,9 @@ export function OverviewPage() {
   const [loading, setLoading] = useState(false)
   const [scenario, setScenario] = useState<Scenario>('random_holdout')
   const [currentCsvPath, setCurrentCsvPath] = useState('')
+  const [fraudD1Path, setFraudD1Path] = useState('')
+  const [fraudD2Path, setFraudD2Path] = useState('')
+  const [fraudD3Path, setFraudD3Path] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -61,7 +64,12 @@ export function OverviewPage() {
     setMessage(null)
     setLoading(true)
     try {
-      const res = await runDriftCheck(scenario, currentCsvPath)
+      const res = await runDriftCheck(scenario, {
+        currentCsvPath,
+        fraudD1Path,
+        fraudD2Path,
+        fraudD3Path,
+      })
       setMessage(
         `Drift check completed. triggered=${String(res.policy_triggered)} run_id=${String(res.run_id)}`,
       )
@@ -78,14 +86,14 @@ export function OverviewPage() {
       {loading && <LinearProgress />}
       <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 900 }}>
         Start here for a snapshot of the system. KPIs summarize how much history you have.{' '}
-        <strong>Run Drift Check</strong> compares the selected scenario to the saved baseline and records a
-        workflow run—use the same control on Workflows for a fuller run history.
+        <strong>Run Drift Check</strong> compares the selected scenario to the saved baseline (Adult or fraud
+        D1/D2/D3 splits) and records a workflow run—use the same control on Workflows for a fuller run history.
       </Typography>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
           System Overview
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
           <Select
             size="small"
             value={scenario}
@@ -94,6 +102,9 @@ export function OverviewPage() {
             <MenuItem value="random_holdout">random_holdout</MenuItem>
             <MenuItem value="age_shift">age_shift</MenuItem>
             <MenuItem value="incoming_csv">incoming_csv</MenuItem>
+            <MenuItem value="fraud_d1_vs_d2">fraud_d1_vs_d2</MenuItem>
+            <MenuItem value="fraud_d2_vs_d3">fraud_d2_vs_d3</MenuItem>
+            <MenuItem value="fraud_d1_vs_d3">fraud_d1_vs_d3</MenuItem>
           </Select>
           {scenario === 'incoming_csv' && (
             <TextField
@@ -104,6 +115,34 @@ export function OverviewPage() {
               onChange={(e) => setCurrentCsvPath(e.target.value)}
               sx={{ minWidth: 300 }}
             />
+          )}
+          {scenario.startsWith('fraud_') && (
+            <>
+              <TextField
+                size="small"
+                label="D1 CSV (optional)"
+                placeholder="FRAUD_D1_PATH or path to D1.csv"
+                value={fraudD1Path}
+                onChange={(e) => setFraudD1Path(e.target.value)}
+                sx={{ minWidth: 220 }}
+              />
+              <TextField
+                size="small"
+                label="D2 CSV (optional)"
+                placeholder="FRAUD_D2_PATH"
+                value={fraudD2Path}
+                onChange={(e) => setFraudD2Path(e.target.value)}
+                sx={{ minWidth: 220 }}
+              />
+              <TextField
+                size="small"
+                label="D3 CSV (optional)"
+                placeholder="FRAUD_D3_PATH"
+                value={fraudD3Path}
+                onChange={(e) => setFraudD3Path(e.target.value)}
+                sx={{ minWidth: 220 }}
+              />
+            </>
           )}
           <Button
             variant="contained"

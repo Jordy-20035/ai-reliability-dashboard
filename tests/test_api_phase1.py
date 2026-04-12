@@ -79,8 +79,48 @@ def test_inference_predict_success(monkeypatch, tmp_path) -> None:
     assert body["model_row_id"] == 7
     assert body["n_rows"] == 2
     assert body["predictions"] == [1, 1]
+    assert body["profile"] == "adult"
     assert body["predicted_income_class"] == [">50K", ">50K"]
     assert body["positive_class_probability"] == [0.9, 0.9]
+
+
+def test_inference_predict_fraud_profile(monkeypatch, tmp_path) -> None:
+    class FakeModelRow:
+        id = 3
+        version_num = 1
+        artifact_path = str(tmp_path / "fraud_model.joblib")
+
+    class FakeLifecycle:
+        def get_production_model_id(self):
+            return 3
+
+        def get_model_by_id(self, model_row_id: int):
+            return FakeModelRow() if model_row_id == 3 else None
+
+    class FakeModel:
+        def predict(self, X):  # type: ignore[no-untyped-def]
+            return [0 for _ in range(len(X))]
+
+        def predict_proba(self, X):  # type: ignore[no-untyped-def]
+            return [[0.95, 0.05] for _ in range(len(X))]
+
+    (tmp_path / "fraud_model.joblib").write_bytes(b"fake")
+    monkeypatch.setattr("src.api.main.default_lifecycle_service", lambda: FakeLifecycle())
+    monkeypatch.setattr("src.api.main._load_model_from_artifact", lambda p: FakeModel())
+    client = TestClient(app)
+    r = client.post("/api/inference/predict", json={"rows": [_fraud_row()], "profile": "fraud"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["profile"] == "fraud"
+    assert body["predicted_fraud_label"] == ["legit"]
+    assert "predicted_income_class" not in body
+
+
+def _fraud_row() -> dict:
+    d: dict = {"Time": 0.0, "Amount": 10.0}
+    for i in range(1, 29):
+        d[f"V{i}"] = 0.0
+    return d
 
 
 def _adult_row() -> dict:

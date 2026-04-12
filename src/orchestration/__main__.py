@@ -12,6 +12,33 @@ from .engine import Orchestrator
 from .scheduler import start_interval_scheduler
 from .store import RunStore
 
+_ORCH_SCENARIO_CHOICES = [
+    "random_holdout",
+    "age_shift",
+    "incoming_csv",
+    "fraud_d1_vs_d2",
+    "fraud_d2_vs_d3",
+    "fraud_d1_vs_d3",
+]
+
+
+def _add_fraud_csv_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--fraud-d1-path",
+        default=None,
+        help="Path to D1.csv (fraud temporal split); overrides FRAUD_D1_PATH",
+    )
+    p.add_argument(
+        "--fraud-d2-path",
+        default=None,
+        help="Path to D2.csv; overrides FRAUD_D2_PATH",
+    )
+    p.add_argument(
+        "--fraud-d3-path",
+        default=None,
+        help="Path to D3.csv; overrides FRAUD_D3_PATH",
+    )
+
 
 def _configure_logging() -> None:
     logging.basicConfig(
@@ -60,6 +87,9 @@ def cmd_check_once(args: argparse.Namespace) -> None:
     cfg = OrchestratorConfig(
         scenario=args.scenario,
         current_csv_path=args.current_csv_path,
+        fraud_d1_path=args.fraud_d1_path,
+        fraud_d2_path=args.fraud_d2_path,
+        fraud_d3_path=args.fraud_d3_path,
         max_high_psi_features=args.max_high_psi,
         max_ks_significant_numeric=args.max_ks,
         max_chi2_significant_categorical=args.max_chi2,
@@ -78,6 +108,9 @@ def cmd_serve(args: argparse.Namespace) -> None:
     cfg = OrchestratorConfig(
         scenario=args.scenario,
         current_csv_path=args.current_csv_path,
+        fraud_d1_path=args.fraud_d1_path,
+        fraud_d2_path=args.fraud_d2_path,
+        fraud_d3_path=args.fraud_d3_path,
         max_high_psi_features=args.max_high_psi,
         max_ks_significant_numeric=args.max_ks,
         max_chi2_significant_categorical=args.max_chi2,
@@ -107,6 +140,9 @@ def cmd_serve_http(args: argparse.Namespace) -> None:
     cfg = OrchestratorConfig(
         scenario=args.scenario,
         current_csv_path=args.current_csv_path,
+        fraud_d1_path=args.fraud_d1_path,
+        fraud_d2_path=args.fraud_d2_path,
+        fraud_d3_path=args.fraud_d3_path,
         max_high_psi_features=args.max_high_psi,
         max_ks_significant_numeric=args.max_ks,
         max_chi2_significant_categorical=args.max_chi2,
@@ -148,7 +184,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_once = sub.add_parser("check-once", help="Run drift pipeline once")
     p_once.add_argument(
         "--scenario",
-        choices=["random_holdout", "age_shift", "incoming_csv"],
+        choices=_ORCH_SCENARIO_CHOICES,
         default="random_holdout",
     )
     p_once.add_argument(
@@ -156,6 +192,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Path to external incoming batch CSV (required for scenario=incoming_csv)",
     )
+    _add_fraud_csv_args(p_once)
     p_once.add_argument("--max-high-psi", type=int, default=0)
     p_once.add_argument("--max-ks", type=int, default=2)
     p_once.add_argument("--max-chi2", type=int, default=3)
@@ -169,12 +206,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_srv = sub.add_parser("serve", help="Run drift check on an interval (background scheduler)")
     p_srv.add_argument("--interval", type=int, default=0, help="Seconds between runs (0 = config/env)")
-    p_srv.add_argument("--scenario", choices=["random_holdout", "age_shift", "incoming_csv"], default="random_holdout")
+    p_srv.add_argument("--scenario", choices=_ORCH_SCENARIO_CHOICES, default="random_holdout")
     p_srv.add_argument(
         "--current-csv-path",
         default=None,
         help="Path to external incoming batch CSV (required for scenario=incoming_csv)",
     )
+    _add_fraud_csv_args(p_srv)
     p_srv.add_argument("--max-high-psi", type=int, default=0)
     p_srv.add_argument("--max-ks", type=int, default=2)
     p_srv.add_argument("--max-chi2", type=int, default=3)
@@ -189,12 +227,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_http = sub.add_parser("serve-http", help="HTTP API + POST /run/drift-check")
     p_http.add_argument("--host", default="127.0.0.1")
     p_http.add_argument("--port", type=int, default=8000)
-    p_http.add_argument("--scenario", choices=["random_holdout", "age_shift", "incoming_csv"], default="random_holdout")
+    p_http.add_argument("--scenario", choices=_ORCH_SCENARIO_CHOICES, default="random_holdout")
     p_http.add_argument(
         "--current-csv-path",
         default=None,
         help="Path to external incoming batch CSV (required for scenario=incoming_csv)",
     )
+    _add_fraud_csv_args(p_http)
     p_http.add_argument("--max-high-psi", type=int, default=0)
     p_http.add_argument("--max-ks", type=int, default=2)
     p_http.add_argument("--max-chi2", type=int, default=3)

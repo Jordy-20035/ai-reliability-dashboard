@@ -11,8 +11,13 @@ from src.drift_detection.report import run_drift_analysis
 from .actions import Action, LogAction, PipelineContext, RetrainPipelineAction
 from .alerts import WebhookAlertAction
 from .config import OrchestratorConfig
+from src.drift_detection.schema_fraud import FRAUD_FEATURE_COLS
+
 from .data_context import (
+    FRAUD_DRIFT_SCENARIOS,
     fit_or_load_baseline,
+    fraud_feature_reference_current,
+    fraud_labeled_reference_current,
     load_feature_matrix,
     split_labeled_reference_current,
     split_reference_current,
@@ -67,22 +72,33 @@ class Orchestrator:
 
     def run_pipeline(self) -> PipelineResult:
         started = _utc_now()
-        X = load_feature_matrix()
-        ref, cur = split_reference_current(
-            X,
-            test_size=self.config.test_size,
-            random_state=self.config.random_state,
-            scenario=self.config.scenario,
-            current_csv_path=self.config.current_csv_path,
-        )
-        labeled_ref, labeled_cur = split_labeled_reference_current(
-            test_size=self.config.test_size,
-            random_state=self.config.random_state,
-            scenario=self.config.scenario,
-            current_csv_path=self.config.current_csv_path,
-        )
-        assert self.config.baseline_path is not None
-        baseline = fit_or_load_baseline(ref, self.config.baseline_path)
+        if self.config.scenario in FRAUD_DRIFT_SCENARIOS:
+            ref, cur = fraud_feature_reference_current(self.config)
+            labeled_ref, labeled_cur = fraud_labeled_reference_current(self.config)
+            assert self.config.fraud_baseline_path is not None
+            baseline = fit_or_load_baseline(
+                ref,
+                self.config.fraud_baseline_path,
+                numeric_features=list(FRAUD_FEATURE_COLS),
+                categorical_features=[],
+            )
+        else:
+            X = load_feature_matrix()
+            ref, cur = split_reference_current(
+                X,
+                test_size=self.config.test_size,
+                random_state=self.config.random_state,
+                scenario=self.config.scenario,
+                current_csv_path=self.config.current_csv_path,
+            )
+            labeled_ref, labeled_cur = split_labeled_reference_current(
+                test_size=self.config.test_size,
+                random_state=self.config.random_state,
+                scenario=self.config.scenario,
+                current_csv_path=self.config.current_csv_path,
+            )
+            assert self.config.baseline_path is not None
+            baseline = fit_or_load_baseline(ref, self.config.baseline_path)
 
         report = run_drift_analysis(ref, cur, baseline)
         triggered, reasons = self.policy.evaluate(report)

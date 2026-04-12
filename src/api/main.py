@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import joblib
 import pandas as pd
@@ -15,10 +15,11 @@ from pydantic import BaseModel
 
 from src.data_management.service import default_data_management_service
 from src.drift_detection.schema import ADULT_CATEGORICAL_FEATURES, ADULT_NUMERIC_FEATURES
+from src.drift_detection.schema_fraud import FRAUD_FEATURE_COLS
 from src.lifecycle.service import default_lifecycle_service
 from src.lifecycle.stages import DeploymentStage
 from src.orchestration.config import OrchestratorConfig
-from src.orchestration.data_context import split_labeled_reference_current
+from src.orchestration.data_context import fraud_retrain_labeled_frames, split_labeled_reference_current
 from src.orchestration.engine import Orchestrator
 from src.orchestration.store import RunStore
 from src.retraining.pipeline import run_retrain_pipeline
@@ -31,14 +32,21 @@ class PromoteRequest(BaseModel):
 
 class RetrainRequest(BaseModel):
     scenario: str = "random_holdout"
+    fraud_d1_path: str | None = None
+    fraud_d2_path: str | None = None
 
 
 class PredictRequest(BaseModel):
     rows: list[dict[str, Any]]
+    profile: Literal["adult", "fraud"] = "adult"
 
 
-def _expected_feature_columns() -> list[str]:
+def _expected_feature_columns_adult() -> list[str]:
     return list(ADULT_NUMERIC_FEATURES) + list(ADULT_CATEGORICAL_FEATURES)
+
+
+def _expected_feature_columns_fraud() -> list[str]:
+    return list(FRAUD_FEATURE_COLS)
 
 
 @lru_cache(maxsize=16)
@@ -52,17 +60,30 @@ def _load_model_from_artifact(artifact_path: Path):
     return _load_model_cached(str(artifact_path), artifact_path.stat().st_mtime_ns)
 
 
+def _opt_path(v: str | None) -> str | None:
+    if v is None:
+        return None
+    s = v.strip()
+    return s or None
+
+
 def _build_orchestrator(
     *,
     scenario: str,
     current_csv_path: str | None = None,
+    fraud_d1_path: str | None = None,
+    fraud_d2_path: str | None = None,
+    fraud_d3_path: str | None = None,
     max_high_psi: int = 0,
     max_ks: int = 2,
     max_chi2: int = 3,
 ) -> Orchestrator:
     cfg = OrchestratorConfig(
-        scenario=scenario,
-        current_csv_path=current_csv_path,
+        scenario=scenario,  # type: ignore[arg-type]
+        current_csv_path=_opt_path(current_csv_path),
+        fraud_d1_path=_opt_path(fraud_d1_path),
+        fraud_d2_path=_opt_path(fraud_d2_path),
+        fraud_d3_path=_opt_path(fraud_d3_path),
         max_high_psi_features=max_high_psi,
         max_ks_significant_numeric=max_ks,
         max_chi2_significant_categorical=max_chi2,
@@ -142,6 +163,9 @@ def create_app() -> FastAPI:
     def orchestration_check_once(
         scenario: str = Query(default="random_holdout"),
         current_csv_path: str | None = Query(default=None),
+        fraud_d1_path: str | None = Query(default=None),
+        fraud_d2_path: str | None = Query(default=None),
+        fraud_d3_path: str | None = Query(default=None),
         max_high_psi: int = Query(default=0, ge=0),
         max_ks: int = Query(default=2, ge=0),
         max_chi2: int = Query(default=3, ge=0),
@@ -149,6 +173,9 @@ def create_app() -> FastAPI:
         orch = _build_orchestrator(
             scenario=scenario,
             current_csv_path=current_csv_path,
+            fraud_d1_path=fraud_d1_path,
+            fraud_d2_path=fraud_d2_path,
+            fraud_d3_path=fraud_d3_path,
             max_high_psi=max_high_psi,
             max_ks=max_ks,
             max_chi2=max_chi2,
@@ -161,14 +188,28 @@ def create_app() -> FastAPI:
 
     @app.post("/api/retraining/run")
     def retraining_run(req: RetrainRequest) -> dict:
-        if req.scenario not in {"random_holdout", "age_shift"}:
-            raise HTTPException(status_code=400, detail="scenario must be random_holdout or age_shift")
-        ref, cur = split_labeled_reference_current(
-            test_size=0.3,
-            random_state=42,
-            scenario=req.scenario,
-        )
-        result = run_retrain_pipeline(ref, cur, scenario=req.scenario)
+        if req.scenario == "fraud_retrain_d1_d2":
+            fcfg = OrchestratorConfig(
+                fraud_d1_path=_opt_path(req.fraud_d1_path),
+                fraud_d2_path=_opt_path(req.fraud_d2_path),
+            )
+            try:
+                ref, cur = fraud_retrain_labeled_frames(fcfg)
+            except (ValueError, FileNotFoundError) as e:
+                raise HTTPException(status_code=400, detail=str(e)) from e
+            result = run_retrain_pipeline(ref, cur, scenario=req.scenario)
+        elif req.scenario in {"random_holdout", "age_shift"}:
+            ref, cur = split_labeled_reference_current(
+                test_size=0.3,
+                random_state=42,
+                scenario=req.scenario,
+            )
+            result = run_retrain_pipeline(ref, cur, scenario=req.scenario)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="scenario must be random_holdout, age_shift, or fraud_retrain_d1_d2",
+            )
         return {
             "version": result.version,
             "promoted": result.promoted,
@@ -181,7 +222,9 @@ def create_app() -> FastAPI:
     def inference_predict(req: PredictRequest) -> dict:
         if not req.rows:
             raise HTTPException(status_code=400, detail="rows must contain at least one record")
-        expected = _expected_feature_columns()
+        expected = (
+            _expected_feature_columns_fraud() if req.profile == "fraud" else _expected_feature_columns_adult()
+        )
         X = pd.DataFrame(req.rows)
         missing = [c for c in expected if c not in X.columns]
         if missing:
@@ -228,15 +271,21 @@ def create_app() -> FastAPI:
             ">50K" if str(p) in {"1", "1.0"} or p == 1 else "<=50K"
             for p in pred_labels
         ]
+        pred_fraud = ["fraud" if (p == 1 or str(p) in {"1", "1.0"}) else "legit" for p in pred_labels]
 
-        return {
+        out: dict[str, Any] = {
             "model_row_id": model_row.id,
             "model_version_num": model_row.version_num,
             "n_rows": len(X),
             "predictions": pred_labels,
-            "predicted_income_class": pred_income,
+            "profile": req.profile,
             "positive_class_probability": probs,
         }
+        if req.profile == "fraud":
+            out["predicted_fraud_label"] = pred_fraud
+        else:
+            out["predicted_income_class"] = pred_income
+        return out
 
     @app.get("/api/lifecycle/models")
     def lifecycle_models(stage: str | None = None) -> dict:

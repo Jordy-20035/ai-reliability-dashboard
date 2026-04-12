@@ -8,11 +8,14 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.drift_detection.schema_fraud import FRAUD_TARGET_COL
+from src.orchestration.data_context import FRAUD_DRIFT_SCENARIOS
+
 from .config import RetrainConfig, default_retrain_config
 from .data_merge import merge_training_data
 from .deploy import should_promote
 from .registry import ModelRegistry, read_champion
-from .train import save_model, train_and_evaluate_holdout
+from .train import save_model, train_and_evaluate_holdout, train_and_evaluate_holdout_fraud
 
 logger = logging.getLogger(__name__)
 
@@ -36,17 +39,30 @@ def run_retrain_pipeline(
     """
     Merge labeled reference + current, train, evaluate, save artifact, register, maybe promote.
 
-    `labeled_*` must include all feature columns + `income` target.
+    `labeled_*` must include Adult features + income, or fraud V1–Amount + Class.
     """
     cfg = cfg or default_retrain_config()
     cfg.ensure_dirs()
 
-    merged = merge_training_data(labeled_reference, labeled_current)
-    pipe, metrics = train_and_evaluate_holdout(
-        merged,
-        test_size=cfg.test_size,
-        random_state=cfg.random_state,
-    )
+    fraud_run = scenario in FRAUD_DRIFT_SCENARIOS or scenario == "fraud_retrain_d1_d2"
+    if fraud_run:
+        merged = merge_training_data(
+            labeled_reference,
+            labeled_current,
+            target_col=FRAUD_TARGET_COL,
+        )
+        pipe, metrics = train_and_evaluate_holdout_fraud(
+            merged,
+            test_size=cfg.test_size,
+            random_state=cfg.random_state,
+        )
+    else:
+        merged = merge_training_data(labeled_reference, labeled_current)
+        pipe, metrics = train_and_evaluate_holdout(
+            merged,
+            test_size=cfg.test_size,
+            random_state=cfg.random_state,
+        )
 
     registry = ModelRegistry(cfg.registry_path)  # type: ignore[arg-type]
     version = registry.next_version()
@@ -88,6 +104,7 @@ def run_retrain_pipeline(
                 "test_size": cfg.test_size,
                 "random_state": cfg.random_state,
                 "primary_metric": cfg.primary_metric,
+                "dataset": "fraud" if fraud_run else "adult",
             },
             scenario=scenario,
         )
@@ -105,11 +122,13 @@ def run_retrain_pipeline(
             notes="reference+current merge used for this retrain",
         )
         bl_id: int | None = None
-        baseline_path = cfg.root / "artifacts" / "baseline_profile.json"
-        if baseline_path.is_file():
+        fraud_baseline = cfg.root / "artifacts" / "baseline_profile_fraud.json"
+        adult_baseline = cfg.root / "artifacts" / "baseline_profile.json"
+        snap_path = fraud_baseline if fraud_run and fraud_baseline.is_file() else adult_baseline
+        if snap_path.is_file():
             bl_id = dm.ensure_baseline_snapshot(
-                baseline_path,
-                name="drift_baseline_profile",
+                snap_path,
+                name="drift_baseline_profile_fraud" if snap_path == fraud_baseline else "drift_baseline_profile",
                 notes="PSI bin edges JSON from drift baseline",
             )
         dm.record_training_provenance(
