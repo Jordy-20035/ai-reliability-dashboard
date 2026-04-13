@@ -7,15 +7,102 @@ import App from './App.tsx'
 
 const theme = createTheme({
   palette: {
-    mode: 'dark',
-    primary: { main: '#60a5fa' },
-    secondary: { main: '#22c55e' },
+    mode: 'light',
+    primary: { main: '#3b82f6' },
+    secondary: { main: '#2563eb' },
     background: {
-      default: '#0b1220',
-      paper: '#131c2f',
+      default: '#f8fafc',
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#1e293b',
+      secondary: '#64748b',
+    },
+    divider: '#bfdbfe',
+  },
+  shape: { borderRadius: 18 },
+  components: {
+    MuiCard: {
+      defaultProps: { variant: 'outlined' },
+      styleOverrides: {
+        root: {
+          borderColor: '#93c5fd',
+          borderWidth: 1.5,
+          borderRadius: 20,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        outlined: {
+          borderColor: '#93c5fd',
+          borderWidth: 1.5,
+          borderRadius: 20,
+        },
+        root: {
+          borderRadius: 20,
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 14,
+          textTransform: 'none' as const,
+          fontWeight: 600,
+        },
+        outlined: {
+          borderColor: '#93c5fd',
+          '&:hover': { borderColor: '#3b82f6', backgroundColor: '#eff6ff' },
+        },
+        contained: {
+          boxShadow: 'none',
+          '&:hover': { boxShadow: '0 2px 8px rgba(59,130,246,0.25)' },
+        },
+      },
+    },
+    MuiSelect: {
+      styleOverrides: {
+        root: { borderRadius: 14 },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 14,
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#93c5fd',
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#3b82f6',
+          },
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#ffffff',
+          color: '#1e293b',
+          borderBottom: '1.5px solid #bfdbfe',
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          borderRight: '1.5px solid #bfdbfe',
+        },
+      },
+    },
+    MuiAlert: {
+      styleOverrides: {
+        root: {
+          borderRadius: 16,
+        },
+      },
     },
   },
-  shape: { borderRadius: 10 },
 })
 
 createRoot(document.getElementById('root')!).render(

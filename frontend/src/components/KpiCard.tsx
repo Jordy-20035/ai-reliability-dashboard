@@ -8,12 +8,25 @@ interface Props {
 
 export function KpiCard({ label, value, subtitle }: Props) {
   return (
-    <Card sx={{ height: '100%' }}>
+    <Card
+      variant="outlined"
+      sx={{
+        height: '100%',
+        borderColor: '#93c5fd',
+        borderWidth: 1.5,
+        borderRadius: 5,
+        transition: 'box-shadow 0.2s, border-color 0.2s',
+        '&:hover': {
+          borderColor: '#3b82f6',
+          boxShadow: '0 4px 16px rgba(59,130,246,0.12)',
+        },
+      }}
+    >
       <CardContent>
-        <Typography color="text.secondary" variant="body2">
+        <Typography color="text.secondary" variant="body2" sx={{ fontWeight: 500 }}>
           {label}
         </Typography>
-        <Typography variant="h4" sx={{ mt: 1, fontWeight: 700 }}>
+        <Typography variant="h4" sx={{ mt: 1, fontWeight: 700, color: 'primary.main' }}>
           {value}
         </Typography>
         {subtitle && (
@@ -25,4 +38,3 @@ export function KpiCard({ label, value, subtitle }: Props) {
     </Card>
   )
 }
-
