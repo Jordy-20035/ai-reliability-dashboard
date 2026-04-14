@@ -1,5 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Alert, Box, Button, LinearProgress, MenuItem, Paper, Select, Stack, TextField, Typography } from '@mui/material'
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Divider,
+  LinearProgress,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material'
+import { PlayArrow } from '@mui/icons-material'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import { EmptyGridOverlay } from '../components/EmptyGridOverlay'
 import { getRuns, runDriftCheck } from '../api/endpoints'
@@ -7,15 +21,22 @@ import type { RunRecord, Scenario } from '../types'
 import { getErrorMessage } from '../utils/errors'
 
 const cols: GridColDef<RunRecord>[] = [
-  { field: 'id', headerName: 'Run ID', width: 90 },
-  { field: 'started_at', headerName: 'Started', width: 220 },
-  { field: 'finished_at', headerName: 'Finished', width: 220 },
+  { field: 'id', headerName: 'Run ID', width: 80 },
+  { field: 'started_at', headerName: 'Started', width: 190 },
+  { field: 'finished_at', headerName: 'Finished', width: 190 },
   { field: 'scenario', headerName: 'Scenario', width: 160 },
   {
     field: 'policy_triggered',
     headerName: 'Triggered',
     width: 110,
-    valueFormatter: (v) => (v ? 'Yes' : 'No'),
+    renderCell: (params) => (
+      <Chip
+        label={params.value ? 'Yes' : 'No'}
+        size="small"
+        color={params.value ? 'error' : 'success'}
+        variant="outlined"
+      />
+    ),
   },
   {
     field: 'trigger_reasons',
@@ -77,28 +98,23 @@ export function WorkflowsPage() {
   }
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2.5}>
       {loading && <LinearProgress />}
-      <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 900 }}>
-        Each row is one <strong>orchestration run</strong>: drift (and related checks) plus whether the{' '}
-        <strong>policy triggered</strong> (the automation hook that can lead to retraining). You can run a new
-        check here as an operator shortcut; it is the <strong>same check</strong> used on Overview.
-      </Typography>
       {error && (
         <Alert severity="error">
           Could not load runs — start API: <code>python -m src.api --port 8000</code> — {error}
         </Alert>
       )}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Workflow Tracking
+      {message && <Alert severity="info">{message}</Alert>}
+
+      {/* ---- Action bar ---- */}
+      <Paper variant="outlined" sx={{ p: 2.5 }}>
+        <Typography variant="h6" gutterBottom>
+          Run Drift Check
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-          <Select
-            size="small"
-            value={scenario}
-            onChange={(e) => setScenario(e.target.value as Scenario)}
-          >
+        <Divider sx={{ mb: 2 }} />
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Select size="small" value={scenario} onChange={(e) => setScenario(e.target.value as Scenario)}>
             <MenuItem value="random_holdout">random_holdout</MenuItem>
             <MenuItem value="age_shift">age_shift</MenuItem>
             <MenuItem value="incoming_csv">incoming_csv</MenuItem>
@@ -107,59 +123,26 @@ export function WorkflowsPage() {
             <MenuItem value="fraud_d1_vs_d3">fraud_d1_vs_d3</MenuItem>
           </Select>
           {scenario === 'incoming_csv' && (
-            <TextField
-              size="small"
-              label="Current CSV Path"
-              placeholder="./data/raw/adult.csv"
-              value={currentCsvPath}
-              onChange={(e) => setCurrentCsvPath(e.target.value)}
-              sx={{ minWidth: 300 }}
-            />
+            <TextField size="small" label="Current CSV" value={currentCsvPath} onChange={(e) => setCurrentCsvPath(e.target.value)} sx={{ minWidth: 260 }} />
           )}
           {scenario.startsWith('fraud_') && (
             <>
-              <TextField
-                size="small"
-                label="D1 CSV (optional)"
-                placeholder="FRAUD_D1_PATH"
-                value={fraudD1Path}
-                onChange={(e) => setFraudD1Path(e.target.value)}
-                sx={{ minWidth: 220 }}
-              />
-              <TextField
-                size="small"
-                label="D2 CSV (optional)"
-                placeholder="FRAUD_D2_PATH"
-                value={fraudD2Path}
-                onChange={(e) => setFraudD2Path(e.target.value)}
-                sx={{ minWidth: 220 }}
-              />
-              <TextField
-                size="small"
-                label="D3 CSV (optional)"
-                placeholder="FRAUD_D3_PATH"
-                value={fraudD3Path}
-                onChange={(e) => setFraudD3Path(e.target.value)}
-                sx={{ minWidth: 220 }}
-              />
+              <TextField size="small" label="D1 (opt)" value={fraudD1Path} onChange={(e) => setFraudD1Path(e.target.value)} sx={{ minWidth: 180 }} />
+              <TextField size="small" label="D2 (opt)" value={fraudD2Path} onChange={(e) => setFraudD2Path(e.target.value)} sx={{ minWidth: 180 }} />
+              <TextField size="small" label="D3 (opt)" value={fraudD3Path} onChange={(e) => setFraudD3Path(e.target.value)} sx={{ minWidth: 180 }} />
             </>
           )}
-          <Button
-            variant="contained"
-            onClick={() => void onRunCheck()}
-            disabled={loading}
-            aria-label="Run new workflow check"
-          >
-            Run New Workflow
+          <Button variant="contained" startIcon={<PlayArrow />} onClick={() => void onRunCheck()} disabled={loading}>
+            Run Check
           </Button>
         </Box>
-      </Box>
-      <Typography variant="caption" color="text.secondary">
-        Same action as Overview → Run Drift Check; results are written to this table.
-      </Typography>
-      {message && <Alert severity="info">{message}</Alert>}
+      </Paper>
 
-      <Paper sx={{ p: 1 }}>
+      {/* ---- Runs table ---- */}
+      <Paper variant="outlined" sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ px: 1, pb: 1 }}>
+          Orchestration Runs
+        </Typography>
         <DataGrid
           rows={rows}
           columns={cols}
@@ -168,9 +151,14 @@ export function WorkflowsPage() {
           autoHeight
           pageSizeOptions={[10, 20, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+          sx={{
+            border: 'none',
+            '& .MuiDataGrid-columnHeaders': { bgcolor: '#f8fafc' },
+            '& .MuiDataGrid-row:hover': { bgcolor: '#fafbff' },
+          }}
           slots={{
             noRowsOverlay: () => (
-              <EmptyGridOverlay message="No workflow runs yet. Use Trigger Check (or Overview → Run Drift Check) after the API is running." />
+              <EmptyGridOverlay message="No workflow runs yet. Use Run Check above after the API is running." />
             ),
           }}
         />
@@ -178,4 +166,3 @@ export function WorkflowsPage() {
     </Stack>
   )
 }
-

@@ -3,6 +3,9 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
+  Divider,
+  Grid,
   LinearProgress,
   MenuItem,
   Paper,
@@ -11,6 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import { PlayArrow, RestartAlt } from '@mui/icons-material'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import { predictProduction } from '../api/endpoints'
 import type { InferenceResponse } from '../types'
@@ -27,35 +31,23 @@ type PredictionRow = {
 
 function fraudFeatureRow(): Record<string, number> {
   const o: Record<string, number> = { Amount: 100 }
-  for (let i = 1; i <= 28; i++) {
-    o[`V${i}`] = 0
-  }
+  for (let i = 1; i <= 28; i++) o[`V${i}`] = 0
   return o
 }
 
 const SAMPLE_ADULT = JSON.stringify(
   [
     {
-      age: 37,
-      fnlwgt: 120000,
-      'education.num': 10,
-      'capital.gain': 0,
-      'capital.loss': 0,
-      'hours.per.week': 40,
-      workclass: 'Private',
-      education: 'HS-grad',
-      'marital.status': 'Married-civ-spouse',
-      occupation: 'Craft-repair',
-      relationship: 'Husband',
-      race: 'White',
-      sex: 'Male',
-      'native.country': 'United-States',
+      age: 37, fnlwgt: 120000, 'education.num': 10, 'capital.gain': 0,
+      'capital.loss': 0, 'hours.per.week': 40, workclass: 'Private',
+      education: 'HS-grad', 'marital.status': 'Married-civ-spouse',
+      occupation: 'Craft-repair', relationship: 'Husband', race: 'White',
+      sex: 'Male', 'native.country': 'United-States',
     },
   ],
   null,
   2,
 )
-
 const SAMPLE_FRAUD = JSON.stringify([fraudFeatureRow()], null, 2)
 
 export function InferencePage() {
@@ -66,13 +58,13 @@ export function InferencePage() {
   const [result, setResult] = useState<InferenceResponse | null>(null)
 
   const cols = useMemo((): GridColDef<PredictionRow>[] => {
-    const probHeader = profile === 'fraud' ? 'P(fraud)' : 'P(>50K)'
-    const classHeader = profile === 'fraud' ? 'Fraud label' : 'Predicted income class'
+    const probH = profile === 'fraud' ? 'P(fraud)' : 'P(>50K)'
+    const classH = profile === 'fraud' ? 'Label' : 'Income Class'
     return [
-      { field: 'id', headerName: 'Row', width: 90 },
-      { field: 'prediction', headerName: 'Prediction', width: 130 },
-      { field: 'class_label', headerName: classHeader, width: 220 },
-      { field: 'positive_probability', headerName: probHeader, width: 130 },
+      { field: 'id', headerName: 'Row', width: 70 },
+      { field: 'prediction', headerName: 'Pred', width: 90 },
+      { field: 'class_label', headerName: classH, width: 180 },
+      { field: 'positive_probability', headerName: probH, width: 110 },
     ]
   }, [profile])
 
@@ -122,76 +114,154 @@ export function InferencePage() {
     }
   }
 
+  const topProb =
+    result?.positive_class_probability?.[0] != null
+      ? result.positive_class_probability[0]
+      : null
+  const scorePercent = topProb != null ? Math.round(topProb * 100) : null
+
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2.5}>
       {loading && <LinearProgress />}
-      <Typography variant="h4" sx={{ fontWeight: 700 }}>
-        Production Inference
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 980 }}>
-        Score rows against the production model pointer. Choose <strong>Adult</strong> (census features) or{' '}
-        <strong>Fraud</strong> (V1–V28 + Amount) so the API validates the correct columns for your trained
-        artifact.
-      </Typography>
-      <Typography variant="caption" color="text.secondary">
-        Tip: Use API docs for schema details if you customize the payload.
-      </Typography>
       {message && <Alert severity="error">{message}</Alert>}
 
-      <Paper sx={{ p: 2 }}>
-        <Stack spacing={1.5}>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-            <Typography variant="body2" color="text.secondary">
-              Feature profile
-            </Typography>
-            <Select
-              size="small"
-              value={profile}
-              onChange={(e) => onProfileChange(e.target.value as InferenceProfile)}
-            >
-              <MenuItem value="adult">adult</MenuItem>
-              <MenuItem value="fraud">fraud</MenuItem>
-            </Select>
-          </Box>
-          <TextField
-            label="Rows JSON payload"
-            multiline
-            minRows={10}
-            value={payloadText}
-            onChange={(e) => setPayloadText(e.target.value)}
-            fullWidth
-          />
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Button variant="contained" onClick={() => void onPredict()} disabled={loading}>
-              Run Production Inference
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => setPayloadText(profile === 'fraud' ? SAMPLE_FRAUD : SAMPLE_ADULT)}
-              disabled={loading}
-            >
-              Reset Sample
-            </Button>
-          </Box>
-        </Stack>
-      </Paper>
+      {/* ---- SPLIT PANE ---- */}
+      <Grid container spacing={2}>
+        {/* LEFT: input */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper variant="outlined" sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+              <Typography variant="h6">Input (JSON)</Typography>
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">Profile</Typography>
+                <Select
+                  size="small"
+                  value={profile}
+                  onChange={(e) => onProfileChange(e.target.value as InferenceProfile)}
+                  sx={{ minWidth: 100 }}
+                >
+                  <MenuItem value="adult">adult</MenuItem>
+                  <MenuItem value="fraud">fraud</MenuItem>
+                </Select>
+              </Stack>
+            </Box>
+            <TextField
+              multiline
+              minRows={14}
+              maxRows={22}
+              value={payloadText}
+              onChange={(e) => setPayloadText(e.target.value)}
+              fullWidth
+              sx={{
+                flexGrow: 1,
+                '& .MuiInputBase-root': {
+                  fontFamily: 'monospace',
+                  fontSize: '0.82rem',
+                  bgcolor: '#f8fafc',
+                },
+              }}
+            />
+            <Box sx={{ display: 'flex', gap: 1.5, mt: 2 }}>
+              <Button variant="contained" startIcon={<PlayArrow />} onClick={() => void onPredict()} disabled={loading}>
+                Submit Inference
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<RestartAlt />}
+                onClick={() => setPayloadText(profile === 'fraud' ? SAMPLE_FRAUD : SAMPLE_ADULT)}
+                disabled={loading}
+              >
+                Load Example
+              </Button>
+            </Box>
+          </Paper>
+        </Grid>
 
-      {result && (
-        <Paper sx={{ p: 1 }}>
-          <Typography variant="body2" sx={{ p: 1 }}>
-            Production model row <strong>{result.model_row_id}</strong> (version{' '}
-            <strong>{result.model_version_num}</strong>) scored <strong>{result.n_rows}</strong> row(s). Profile:{' '}
-            <strong>{result.profile}</strong>.
-          </Typography>
-          <DataGrid
-            rows={rows}
-            columns={cols}
-            autoHeight
-            pageSizeOptions={[10, 20, 50]}
-            initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
-          />
-        </Paper>
-      )}
+        {/* RIGHT: results */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper variant="outlined" sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Typography variant="h6" gutterBottom>
+              Results
+            </Typography>
+
+            {result ? (
+              <Stack spacing={2} sx={{ flexGrow: 1 }}>
+                {/* Score gauge-like block */}
+                {scorePercent != null && (
+                  <Box sx={{ textAlign: 'center', py: 1.5 }}>
+                    <Typography variant="h2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                      {scorePercent}%
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      Confidence (P positive class)
+                    </Typography>
+                    <Box
+                      sx={{
+                        mt: 1.5,
+                        mx: 'auto',
+                        width: '80%',
+                        height: 10,
+                        borderRadius: 5,
+                        bgcolor: '#e2e8f0',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          height: '100%',
+                          width: `${scorePercent}%`,
+                          borderRadius: 5,
+                          bgcolor: scorePercent > 50 ? '#1a5fb4' : '#16a34a',
+                          transition: 'width 0.4s',
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                )}
+
+                <Divider />
+
+                {/* Model info */}
+                <Box sx={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: 0.5, fontSize: 13 }}>
+                  <Typography variant="caption" color="text.secondary">Model</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>Row {result.model_row_id} · v{result.model_version_num}</Typography>
+                  <Typography variant="caption" color="text.secondary">Profile</Typography>
+                  <Chip label={result.profile} size="small" variant="outlined" color={result.profile === 'fraud' ? 'error' : 'primary'} />
+                  <Typography variant="caption" color="text.secondary">Rows scored</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{result.n_rows}</Typography>
+                </Box>
+
+                <Divider />
+
+                {/* Results table */}
+                <DataGrid
+                  rows={rows}
+                  columns={cols}
+                  autoHeight
+                  pageSizeOptions={[10, 20]}
+                  initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+                  sx={{
+                    border: 'none',
+                    '& .MuiDataGrid-columnHeaders': { bgcolor: '#f8fafc' },
+                  }}
+                />
+              </Stack>
+            ) : (
+              <Box
+                sx={{
+                  flexGrow: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'text.secondary',
+                }}
+              >
+                <Typography variant="body2">Submit inference to see results here.</Typography>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
     </Stack>
   )
 }

@@ -3,6 +3,8 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
+  Divider,
   Grid,
   LinearProgress,
   MenuItem,
@@ -12,7 +14,14 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import {
+  Analytics,
+  ModelTraining,
+  PlayArrow,
+  Settings,
+  TrendingUp,
+} from '@mui/icons-material'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { getOverview, runDriftCheck } from '../api/endpoints'
 import { KpiCard } from '../components/KpiCard'
 import type { OverviewResponse, Scenario } from '../types'
@@ -52,7 +61,7 @@ export function OverviewPage() {
     return [
       { name: 'High PSI', value: s.n_features_high_psi ?? 0 },
       { name: 'KS Significant', value: s.n_numeric_ks_significant ?? 0 },
-      { name: 'Chi2 Significant', value: s.n_categorical_chi2_significant ?? 0 },
+      { name: 'Chi² Significant', value: s.n_categorical_chi2_significant ?? 0 },
     ]
   }, [overview])
 
@@ -81,19 +90,112 @@ export function OverviewPage() {
     }
   }
 
+  const triggered = overview?.last_run?.policy_triggered
+
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2.5}>
       {loading && <LinearProgress />}
-      <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 900 }}>
-        Start here for a snapshot of the system. KPIs summarize how much history you have.{' '}
-        <strong>Run Drift Check</strong> compares the selected scenario to the saved baseline (Adult or fraud
-        D1/D2/D3 splits) and records a workflow run—use the same control on Workflows for a fuller run history.
-      </Typography>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          System Overview
+
+      {error && (
+        <Alert severity="error">
+          Could not reach API. Start backend: <code>python -m src.api --port 8000</code> — {error}
+        </Alert>
+      )}
+      {message && <Alert severity="info">{message}</Alert>}
+
+      {/* ---- KPI row ---- */}
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <KpiCard
+            icon={<TrendingUp fontSize="small" />}
+            label="Drift score (mean PSI)"
+            value={
+              overview?.last_run?.summary?.mean_psi != null
+                ? (overview.last_run.summary.mean_psi as number).toFixed(3)
+                : '-'
+            }
+            subtitle={triggered != null ? (triggered ? 'policy triggered' : 'within threshold') : undefined}
+          />
+        </Grid>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <KpiCard
+            icon={<Analytics fontSize="small" />}
+            label="Workflow Runs"
+            value={overview?.kpis.n_runs ?? 0}
+          />
+        </Grid>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <KpiCard
+            icon={<ModelTraining fontSize="small" />}
+            label="Model Versions"
+            value={overview?.kpis.n_models ?? 0}
+          />
+        </Grid>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <KpiCard
+            icon={<Settings fontSize="small" />}
+            label="Production Row"
+            value={overview?.kpis.production_model_row_id ?? '-'}
+            subtitle="serving pointer"
+          />
+        </Grid>
+      </Grid>
+
+      {/* ---- Chart + summary ---- */}
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Paper variant="outlined" sx={{ p: 2.5, height: 340 }}>
+            <Typography variant="h6" gutterBottom>
+              Drift Signal Counts
+            </Typography>
+            <ResponsiveContainer width="100%" height="88%">
+              <BarChart data={chartData} barCategoryGap="25%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#1a5fb4" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Paper>
+        </Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper variant="outlined" sx={{ p: 2.5, height: 340 }}>
+            <Typography variant="h6" gutterBottom>
+              Last Run
+            </Typography>
+            <Stack spacing={1.25} sx={{ fontSize: 14 }}>
+              <Row label="Scenario" val={overview?.last_run?.scenario} />
+              <Row
+                label="Triggered"
+                val={
+                  triggered != null ? (
+                    <Chip
+                      label={triggered ? 'Yes' : 'No'}
+                      size="small"
+                      color={triggered ? 'error' : 'success'}
+                      variant="outlined"
+                    />
+                  ) : (
+                    '-'
+                  )
+                }
+              />
+              <Row label="Run ID" val={overview?.last_run?.id} />
+              <Row label="Latest model" val={overview?.latest_model ? `v${overview.latest_model.version_num}` : undefined} />
+              <Row label="Experiment" val={overview?.latest_experiment?.name} />
+            </Stack>
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* ---- Action buttons ---- */}
+      <Paper variant="outlined" sx={{ p: 2.5 }}>
+        <Typography variant="h6" gutterBottom>
+          Run Drift Check
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Divider sx={{ mb: 2 }} />
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
           <Select
             size="small"
             value={scenario}
@@ -113,106 +215,39 @@ export function OverviewPage() {
               placeholder="./data/raw/adult.csv"
               value={currentCsvPath}
               onChange={(e) => setCurrentCsvPath(e.target.value)}
-              sx={{ minWidth: 300 }}
+              sx={{ minWidth: 260 }}
             />
           )}
           {scenario.startsWith('fraud_') && (
             <>
-              <TextField
-                size="small"
-                label="D1 CSV (optional)"
-                placeholder="FRAUD_D1_PATH or path to D1.csv"
-                value={fraudD1Path}
-                onChange={(e) => setFraudD1Path(e.target.value)}
-                sx={{ minWidth: 220 }}
-              />
-              <TextField
-                size="small"
-                label="D2 CSV (optional)"
-                placeholder="FRAUD_D2_PATH"
-                value={fraudD2Path}
-                onChange={(e) => setFraudD2Path(e.target.value)}
-                sx={{ minWidth: 220 }}
-              />
-              <TextField
-                size="small"
-                label="D3 CSV (optional)"
-                placeholder="FRAUD_D3_PATH"
-                value={fraudD3Path}
-                onChange={(e) => setFraudD3Path(e.target.value)}
-                sx={{ minWidth: 220 }}
-              />
+              <TextField size="small" label="D1 (opt)" value={fraudD1Path} onChange={(e) => setFraudD1Path(e.target.value)} sx={{ minWidth: 180 }} />
+              <TextField size="small" label="D2 (opt)" value={fraudD2Path} onChange={(e) => setFraudD2Path(e.target.value)} sx={{ minWidth: 180 }} />
+              <TextField size="small" label="D3 (opt)" value={fraudD3Path} onChange={(e) => setFraudD3Path(e.target.value)} sx={{ minWidth: 180 }} />
             </>
           )}
           <Button
             variant="contained"
+            startIcon={<PlayArrow />}
             onClick={() => void onRunCheck()}
             disabled={loading}
-            aria-label="Run drift check for selected scenario"
           >
-            Run Drift Check
+            Run Check
           </Button>
         </Box>
-      </Box>
-
-      {error && (
-        <Alert severity="error">
-          Could not reach API. Start backend: <code>python -m src.api --port 8000</code> — {error}
-        </Alert>
-      )}
-      {message && <Alert severity="info">{message}</Alert>}
-
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 3 }}>
-          <KpiCard label="Workflow Runs" value={overview?.kpis.n_runs ?? 0} />
-        </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
-          <KpiCard label="Model Versions" value={overview?.kpis.n_models ?? 0} />
-        </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
-          <KpiCard label="Dataset Versions" value={overview?.kpis.n_datasets ?? 0} />
-        </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
-          <KpiCard
-            label="Current Production Row"
-            value={overview?.kpis.production_model_row_id ?? '-'}
-            subtitle="from lifecycle settings"
-          />
-        </Grid>
-      </Grid>
-
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Paper sx={{ p: 2, height: 320 }}>
-            <Typography variant="h6" gutterBottom>
-              Latest Drift Signal Counts
-            </Typography>
-            <ResponsiveContainer width="100%" height="90%">
-              <BarChart data={chartData}>
-                <XAxis dataKey="name" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Paper>
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Paper sx={{ p: 2, height: 320 }}>
-            <Typography variant="h6" gutterBottom>
-              Last Run Summary
-            </Typography>
-            <Box sx={{ fontSize: 14, lineHeight: 1.8 }}>
-              <div>Scenario: {overview?.last_run?.scenario ?? '-'}</div>
-              <div>Triggered: {String(overview?.last_run?.policy_triggered ?? false)}</div>
-              <div>Run ID: {overview?.last_run?.id ?? '-'}</div>
-              <div>Latest model: v{overview?.latest_model?.version_num ?? '-'}</div>
-              <div>Latest experiment: {overview?.latest_experiment?.name ?? '-'}</div>
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+      </Paper>
     </Stack>
   )
 }
 
+function Row({ label, val }: { label: string; val?: React.ReactNode }) {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+        {val ?? '-'}
+      </Typography>
+    </Box>
+  )
+}

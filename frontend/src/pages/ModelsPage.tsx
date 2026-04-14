@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   Button,
+  Divider,
   LinearProgress,
   MenuItem,
   Paper,
@@ -12,32 +13,45 @@ import {
   Typography,
 } from '@mui/material'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
+import { Publish, Refresh } from '@mui/icons-material'
 import { EmptyGridOverlay } from '../components/EmptyGridOverlay'
+import { StageBadge } from '../components/StageBadge'
 import { getExperiments, getModels, getProductionPointer, promoteModel, runRetrain } from '../api/endpoints'
 import type { LifecycleExperiment, LifecycleModel, RetrainScenario } from '../types'
 import { getErrorMessage } from '../utils/errors'
 
 const modelCols: GridColDef<LifecycleModel>[] = [
-  { field: 'id', headerName: 'Row ID', width: 90 },
-  { field: 'version_num', headerName: 'Version', width: 100 },
-  { field: 'stage', headerName: 'Stage', width: 130 },
-  { field: 'created_at', headerName: 'Created', width: 220 },
-  { field: 'experiment_id', headerName: 'Exp ID', width: 100 },
+  { field: 'id', headerName: 'Row ID', width: 80 },
+  { field: 'version_num', headerName: 'Version', width: 90 },
+  {
+    field: 'stage',
+    headerName: 'Stage',
+    width: 130,
+    renderCell: (params) => <StageBadge stage={params.value as string} />,
+  },
+  { field: 'created_at', headerName: 'Created', width: 190 },
+  { field: 'experiment_id', headerName: 'Exp ID', width: 80 },
   {
     field: 'f1',
     headerName: 'F1 Macro',
-    width: 110,
+    width: 100,
     valueGetter: (_, row) => row.metrics?.f1_macro ?? '-',
   },
-  { field: 'notes', headerName: 'Notes', flex: 1, minWidth: 220 },
+  {
+    field: 'accuracy',
+    headerName: 'Accuracy',
+    width: 100,
+    valueGetter: (_, row) => row.metrics?.accuracy != null ? (row.metrics.accuracy as number).toFixed(4) : '-',
+  },
+  { field: 'notes', headerName: 'Notes', flex: 1, minWidth: 200 },
 ]
 
 const expCols: GridColDef<LifecycleExperiment>[] = [
-  { field: 'id', headerName: 'ID', width: 80 },
+  { field: 'id', headerName: 'ID', width: 70 },
   { field: 'name', headerName: 'Name', minWidth: 240, flex: 1 },
-  { field: 'scenario', headerName: 'Scenario', width: 130 },
-  { field: 'created_at', headerName: 'Created', width: 220 },
-  { field: 'git_sha', headerName: 'Git SHA', width: 160 },
+  { field: 'scenario', headerName: 'Scenario', width: 140 },
+  { field: 'created_at', headerName: 'Created', width: 190 },
+  { field: 'git_sha', headerName: 'Git SHA', width: 140 },
 ]
 
 export function ModelsPage() {
@@ -76,10 +90,7 @@ export function ModelsPage() {
     setMessage(null)
     setLoading(true)
     try {
-      const res = await runRetrain(scenario, {
-        fraudD1Path,
-        fraudD2Path,
-      })
+      const res = await runRetrain(scenario, { fraudD1Path, fraudD2Path })
       setMessage(`Retrain done: v${String(res.version)} promoted=${String(res.promoted)}`)
       await load()
     } catch (e) {
@@ -107,86 +118,65 @@ export function ModelsPage() {
   }
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2.5}>
       {loading && <LinearProgress />}
       {error && (
         <Alert severity="error">
           Could not load models — start API: <code>python -m src.api --port 8000</code> — {error}
         </Alert>
       )}
-      <Typography variant="h4" sx={{ fontWeight: 700 }}>
-        Model Lifecycle & Control
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 960 }}>
-        <strong>Trigger Retraining</strong> trains a new version (Adult holdout splits or fraud D1+D2 merge) and
-        registers it in the lifecycle store. Then pick a <strong>Row ID</strong> from the Model Versions table
-        and <strong>Promote stage</strong> to move it toward production (or archive). Production pointer:{' '}
-        <strong>{productionId ?? 'not set'}</strong>.
-      </Typography>
       {message && <Alert severity="info">{message}</Alert>}
 
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Select
-          size="small"
-          value={scenario}
-          onChange={(e) => setScenario(e.target.value as RetrainScenario)}
-        >
-          <MenuItem value="random_holdout">random_holdout</MenuItem>
-          <MenuItem value="age_shift">age_shift</MenuItem>
-          <MenuItem value="fraud_retrain_d1_d2">fraud_retrain_d1_d2</MenuItem>
-        </Select>
-        {scenario === 'fraud_retrain_d1_d2' && (
-          <>
-            <TextField
-              size="small"
-              label="D1 CSV (optional)"
-              placeholder="FRAUD_D1_PATH"
-              value={fraudD1Path}
-              onChange={(e) => setFraudD1Path(e.target.value)}
-              sx={{ minWidth: 220 }}
-            />
-            <TextField
-              size="small"
-              label="D2 CSV (optional)"
-              placeholder="FRAUD_D2_PATH"
-              value={fraudD2Path}
-              onChange={(e) => setFraudD2Path(e.target.value)}
-              sx={{ minWidth: 220 }}
-            />
-          </>
-        )}
-        <Button
-          variant="contained"
-          onClick={() => void onRetrain()}
-          disabled={loading}
-          aria-label="Trigger model retraining for selected scenario"
-        >
-          Trigger Retraining
-        </Button>
-        <TextField
-          size="small"
-          label="Lifecycle Row ID"
-          value={promoteId}
-          onChange={(e) => setPromoteId(e.target.value)}
-        />
-        <Select size="small" value={promoteStage} onChange={(e) => setPromoteStage(e.target.value)}>
-          <MenuItem value="staging">staging</MenuItem>
-          <MenuItem value="production">production</MenuItem>
-          <MenuItem value="archived">archived</MenuItem>
-        </Select>
-        <Button
-          variant="outlined"
-          onClick={() => void onPromote()}
-          disabled={loading}
-          aria-label="Promote lifecycle model row to selected stage"
-        >
-          Promote Stage
-        </Button>
-      </Box>
+      <Typography variant="body2" color="text.secondary">
+        Production pointer: <strong>{productionId ?? 'not set'}</strong>
+      </Typography>
 
-      <Paper sx={{ p: 1 }}>
-        <Typography variant="h6" sx={{ p: 1 }}>
-          Model Versions
+      {/* ---- Action panels ---- */}
+      <Paper variant="outlined" sx={{ p: 2.5 }}>
+        <Typography variant="h6" gutterBottom>
+          Trigger Retraining
+        </Typography>
+        <Divider sx={{ mb: 2 }} />
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Select size="small" value={scenario} onChange={(e) => setScenario(e.target.value as RetrainScenario)}>
+            <MenuItem value="random_holdout">random_holdout</MenuItem>
+            <MenuItem value="age_shift">age_shift</MenuItem>
+            <MenuItem value="fraud_retrain_d1_d2">fraud_retrain_d1_d2</MenuItem>
+          </Select>
+          {scenario === 'fraud_retrain_d1_d2' && (
+            <>
+              <TextField size="small" label="D1 (opt)" value={fraudD1Path} onChange={(e) => setFraudD1Path(e.target.value)} sx={{ minWidth: 180 }} />
+              <TextField size="small" label="D2 (opt)" value={fraudD2Path} onChange={(e) => setFraudD2Path(e.target.value)} sx={{ minWidth: 180 }} />
+            </>
+          )}
+          <Button variant="contained" startIcon={<Refresh />} onClick={() => void onRetrain()} disabled={loading}>
+            Retrain
+          </Button>
+        </Box>
+      </Paper>
+
+      <Paper variant="outlined" sx={{ p: 2.5 }}>
+        <Typography variant="h6" gutterBottom>
+          Promote Stage
+        </Typography>
+        <Divider sx={{ mb: 2 }} />
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+          <TextField size="small" label="Row ID" value={promoteId} onChange={(e) => setPromoteId(e.target.value)} sx={{ width: 110 }} />
+          <Select size="small" value={promoteStage} onChange={(e) => setPromoteStage(e.target.value)}>
+            <MenuItem value="staging">staging</MenuItem>
+            <MenuItem value="production">production</MenuItem>
+            <MenuItem value="archived">archived</MenuItem>
+          </Select>
+          <Button variant="outlined" startIcon={<Publish />} onClick={() => void onPromote()} disabled={loading}>
+            Promote
+          </Button>
+        </Box>
+      </Paper>
+
+      {/* ---- Tables ---- */}
+      <Paper variant="outlined" sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ px: 1, pb: 1 }}>
+          Model Registry &amp; Lifecycle
         </Typography>
         <DataGrid
           rows={models}
@@ -196,16 +186,21 @@ export function ModelsPage() {
           autoHeight
           pageSizeOptions={[10, 20, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+          sx={{
+            border: 'none',
+            '& .MuiDataGrid-columnHeaders': { bgcolor: '#f8fafc' },
+            '& .MuiDataGrid-row:hover': { bgcolor: '#fafbff' },
+          }}
           slots={{
             noRowsOverlay: () => (
-              <EmptyGridOverlay message="No registered models yet. Run Trigger Retraining to create a version, or seed data via the training CLI/API." />
+              <EmptyGridOverlay message="No registered models yet. Run Trigger Retraining to create a version." />
             ),
           }}
         />
       </Paper>
 
-      <Paper sx={{ p: 1 }}>
-        <Typography variant="h6" sx={{ p: 1 }}>
+      <Paper variant="outlined" sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ px: 1, pb: 1 }}>
           Experiments
         </Typography>
         <DataGrid
@@ -216,9 +211,14 @@ export function ModelsPage() {
           autoHeight
           pageSizeOptions={[10, 20, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+          sx={{
+            border: 'none',
+            '& .MuiDataGrid-columnHeaders': { bgcolor: '#f8fafc' },
+            '& .MuiDataGrid-row:hover': { bgcolor: '#fafbff' },
+          }}
           slots={{
             noRowsOverlay: () => (
-              <EmptyGridOverlay message="No experiments yet. They appear when training runs register lineage (e.g. after retraining)." />
+              <EmptyGridOverlay message="No experiments yet. They appear after retraining runs." />
             ),
           }}
         />
@@ -226,4 +226,3 @@ export function ModelsPage() {
     </Stack>
   )
 }
-

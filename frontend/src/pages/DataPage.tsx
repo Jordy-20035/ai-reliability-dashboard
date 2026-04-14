@@ -7,22 +7,22 @@ import type { DatasetVersion, ProvenanceRow } from '../types'
 import { getErrorMessage } from '../utils/errors'
 
 const datasetCols: GridColDef<DatasetVersion>[] = [
-  { field: 'id', headerName: 'ID', width: 80 },
+  { field: 'id', headerName: 'ID', width: 70 },
   { field: 'name', headerName: 'Name', minWidth: 220, flex: 1 },
-  { field: 'kind', headerName: 'Kind', width: 170 },
-  { field: 'row_count', headerName: 'Rows', width: 100 },
-  { field: 'content_hash', headerName: 'Hash', width: 220 },
-  { field: 'created_at', headerName: 'Created', width: 220 },
+  { field: 'kind', headerName: 'Kind', width: 160 },
+  { field: 'row_count', headerName: 'Rows', width: 90 },
+  { field: 'content_hash', headerName: 'Hash', width: 200 },
+  { field: 'created_at', headerName: 'Created', width: 190 },
 ]
 
 const provCols: GridColDef<ProvenanceRow>[] = [
-  { field: 'id', headerName: 'ID', width: 80 },
-  { field: 'lifecycle_experiment_id', headerName: 'Exp ID', width: 90 },
+  { field: 'id', headerName: 'ID', width: 70 },
+  { field: 'lifecycle_experiment_id', headerName: 'Exp ID', width: 80 },
   { field: 'lifecycle_model_version_num', headerName: 'Model V', width: 90 },
-  { field: 'dataset_version_id', headerName: 'Dataset V', width: 100 },
-  { field: 'baseline_snapshot_id', headerName: 'Baseline ID', width: 100 },
-  { field: 'git_sha', headerName: 'Git SHA', width: 180 },
-  { field: 'created_at', headerName: 'Created', width: 220 },
+  { field: 'dataset_version_id', headerName: 'Dataset V', width: 90 },
+  { field: 'baseline_snapshot_id', headerName: 'Baseline', width: 90 },
+  { field: 'git_sha', headerName: 'Git SHA', width: 160 },
+  { field: 'created_at', headerName: 'Created', width: 190 },
 ]
 
 export function DataPage() {
@@ -50,23 +50,16 @@ export function DataPage() {
   }, [])
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2.5}>
       {loading && <LinearProgress />}
       {error && (
         <Alert severity="error">
-          Could not load data tables — start API: <code>python -m src.api --port 8000</code> — {error}
+          Could not load data — start API: <code>python -m src.api --port 8000</code> — {error}
         </Alert>
       )}
-      <Typography variant="h4" sx={{ fontWeight: 700 }}>
-        Data Versioning & Provenance
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 960 }}>
-        This page is <strong>read-only</strong>: it shows registered dataset snapshots (hashes, row counts) and{' '}
-        <strong>provenance</strong> rows that tie each training run to data + code. You do not “upload” here in
-        the demo; versions appear when the data-management / training pipeline records them.
-      </Typography>
-      <Paper sx={{ p: 1 }}>
-        <Typography variant="h6" sx={{ p: 1 }}>
+
+      <Paper variant="outlined" sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ px: 1, pb: 1 }}>
           Dataset Versions
         </Typography>
         <DataGrid
@@ -77,16 +70,21 @@ export function DataPage() {
           autoHeight
           pageSizeOptions={[10, 20, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+          sx={{
+            border: 'none',
+            '& .MuiDataGrid-columnHeaders': { bgcolor: '#f8fafc' },
+            '& .MuiDataGrid-row:hover': { bgcolor: '#fafbff' },
+          }}
           slots={{
             noRowsOverlay: () => (
-              <EmptyGridOverlay message="No dataset versions recorded yet. Run data-management / training flows so snapshots and hashes are persisted." />
+              <EmptyGridOverlay message="No dataset versions recorded yet." />
             ),
           }}
         />
       </Paper>
 
-      <Paper sx={{ p: 1 }}>
-        <Typography variant="h6" sx={{ p: 1 }}>
+      <Paper variant="outlined" sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ px: 1, pb: 1 }}>
           Training Provenance
         </Typography>
         <DataGrid
@@ -97,9 +95,14 @@ export function DataPage() {
           autoHeight
           pageSizeOptions={[10, 20, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
+          sx={{
+            border: 'none',
+            '& .MuiDataGrid-columnHeaders': { bgcolor: '#f8fafc' },
+            '& .MuiDataGrid-row:hover': { bgcolor: '#fafbff' },
+          }}
           slots={{
             noRowsOverlay: () => (
-              <EmptyGridOverlay message="No provenance rows yet. These link experiments, model versions, and dataset snapshots after training is registered." />
+              <EmptyGridOverlay message="No provenance rows yet." />
             ),
           }}
         />
@@ -107,4 +110,3 @@ export function DataPage() {
     </Stack>
   )
 }
-

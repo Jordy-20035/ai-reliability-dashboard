@@ -55,11 +55,11 @@ export function HelpDrawer({ wide = true, floating = false }: HelpDrawerProps) {
               ? {
                   borderRadius: 999,
                   bgcolor: 'background.paper',
-                  borderColor: '#93c5fd',
-                  boxShadow: '0 2px 12px rgba(59,130,246,0.15)',
+                  borderColor: '#cbd5e1',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                   px: 1.75,
                 }
-              : { border: '1px solid #93c5fd' }
+              : { border: '1px solid #cbd5e1' }
           }
         >
           How it works

@@ -1,13 +1,21 @@
-import { Analytics, Dataset, Hub, ModelTraining } from '@mui/icons-material'
+import {
+  Analytics,
+  Dataset,
+  Hub,
+  ModelTraining,
+  OpenInNew,
+} from '@mui/icons-material'
 import {
   AppBar,
+  Avatar,
   Box,
-  Button,
   Drawer,
+  IconButton,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Stack,
   Toolbar,
   Tooltip,
   Typography,
@@ -15,46 +23,48 @@ import {
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { HelpDrawer } from './HelpDrawer'
 
-const SIDEBAR_WIDTH = 220
+const SIDEBAR_WIDTH = 210
 
 const nav = [
   {
     label: 'Overview',
     to: '/',
-    icon: <Analytics />,
-    hint: 'KPIs, latest drift counts, run a drift check against the baseline',
+    icon: <Analytics fontSize="small" />,
+    hint: 'KPIs, latest drift counts, run a drift check',
   },
   {
     label: 'Workflows',
     to: '/workflows',
-    icon: <Hub />,
-    hint: 'History of orchestration runs and whether policy triggered',
+    icon: <Hub fontSize="small" />,
+    hint: 'History of orchestration runs',
   },
   {
     label: 'Models',
     to: '/models',
-    icon: <ModelTraining />,
-    hint: 'Retrain, promote stages, see experiments and production pointer',
+    icon: <ModelTraining fontSize="small" />,
+    hint: 'Registry, retrain, promote, lifecycle',
   },
   {
     label: 'Data',
     to: '/data',
-    icon: <Dataset />,
-    hint: 'Dataset versions (hashes) and training provenance links',
+    icon: <Dataset fontSize="small" />,
+    hint: 'Dataset versions and provenance',
   },
   {
     label: 'Inference',
     to: '/inference',
-    icon: <Analytics />,
-    hint: 'Run prediction against the current production model pointer',
+    icon: <Analytics fontSize="small" />,
+    hint: 'Score against production model',
   },
 ] as const
 
 export function AppLayout() {
   const location = useLocation()
+  const activeLabel = nav.find((n) => n.to === location.pathname)?.label ?? 'Overview'
+
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Left sidebar */}
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+      {/* ---- LEFT SIDEBAR ---- */}
       <Drawer
         variant="permanent"
         sx={{
@@ -63,47 +73,57 @@ export function AppLayout() {
           '& .MuiDrawer-paper': {
             width: SIDEBAR_WIDTH,
             boxSizing: 'border-box',
-            bgcolor: '#f0f7ff',
-            borderRight: '1.5px solid #bfdbfe',
-            pt: 2,
+            bgcolor: '#ffffff',
+            borderRight: '1px solid #e2e8f0',
+            display: 'flex',
+            flexDirection: 'column',
           },
         }}
       >
-        <Box sx={{ px: 2, pb: 2 }}>
-          <Typography
-            variant="subtitle1"
-            sx={{
-              fontWeight: 800,
-              color: 'primary.main',
-              lineHeight: 1.3,
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Trustworthy AI
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Control Center
-          </Typography>
+        <Box sx={{ px: 2.5, pt: 2.5, pb: 1.5 }}>
+          <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
+            <Avatar
+              sx={{
+                bgcolor: '#1a5fb4',
+                width: 32,
+                height: 32,
+                fontSize: 14,
+                fontWeight: 800,
+              }}
+            >
+              AI
+            </Avatar>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+                Trustworthy AI
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                Control Center
+              </Typography>
+            </Box>
+          </Stack>
         </Box>
-        <List sx={{ px: 1 }}>
+
+        <List sx={{ px: 1, flexGrow: 1 }}>
           {nav.map((item) => {
             const active = location.pathname === item.to
             return (
-              <Tooltip key={item.to} title={item.hint} placement="right" enterDelay={500}>
+              <Tooltip key={item.to} title={item.hint} placement="right" enterDelay={600}>
                 <ListItemButton
                   component={NavLink}
                   to={item.to}
                   sx={{
-                    borderRadius: 3,
-                    mb: 0.5,
-                    bgcolor: active ? '#dbeafe' : 'transparent',
+                    borderRadius: 2.5,
+                    mb: 0.25,
+                    py: 0.75,
+                    bgcolor: active ? '#eef2ff' : 'transparent',
                     color: active ? 'primary.main' : 'text.primary',
-                    '&:hover': { bgcolor: '#dbeafe' },
+                    '&:hover': { bgcolor: active ? '#eef2ff' : '#f8fafc' },
                   }}
                 >
                   <ListItemIcon
                     sx={{
-                      minWidth: 36,
+                      minWidth: 32,
                       color: active ? 'primary.main' : 'text.secondary',
                     }}
                   >
@@ -115,7 +135,7 @@ export function AppLayout() {
                       primary: {
                         sx: {
                           fontWeight: active ? 700 : 500,
-                          fontSize: '0.9rem',
+                          fontSize: '0.84rem',
                         },
                       },
                     }}
@@ -127,38 +147,49 @@ export function AppLayout() {
         </List>
       </Drawer>
 
-      {/* Main content area */}
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Top bar with API Docs on the right */}
+      {/* ---- MAIN ---- */}
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {/* Top bar */}
         <AppBar
           position="sticky"
           elevation={0}
           sx={{
             bgcolor: '#ffffff',
             color: 'text.primary',
-            borderBottom: '1.5px solid #bfdbfe',
+            borderBottom: '1px solid #e2e8f0',
+            zIndex: (t) => t.zIndex.drawer - 1,
           }}
         >
-          <Toolbar sx={{ justifyContent: 'flex-end', minHeight: 52 }}>
-            <Button
-              href="/docs"
-              target="_blank"
-              rel="noreferrer"
-              variant="outlined"
-              size="small"
-              sx={{
-                borderColor: '#93c5fd',
-                color: 'primary.main',
-                fontWeight: 600,
-                '&:hover': { borderColor: '#3b82f6', bgcolor: '#eff6ff' },
-              }}
-            >
-              API Docs
-            </Button>
+          <Toolbar sx={{ justifyContent: 'space-between', minHeight: 52 }}>
+            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+              {activeLabel}
+            </Typography>
+
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <Tooltip title="OpenAPI docs (new tab)">
+                <IconButton
+                  href="/docs"
+                  target="_blank"
+                  rel="noreferrer"
+                  size="small"
+                  sx={{ color: 'text.secondary' }}
+                >
+                  <OpenInNew fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
           </Toolbar>
         </AppBar>
 
-        <Box sx={{ flexGrow: 1, p: 3, maxWidth: 1400, mx: 'auto', width: '100%' }}>
+        <Box
+          sx={{
+            flexGrow: 1,
+            p: { xs: 2, md: 3 },
+            maxWidth: 1360,
+            width: '100%',
+            mx: 'auto',
+          }}
+        >
           <Outlet />
         </Box>
       </Box>
