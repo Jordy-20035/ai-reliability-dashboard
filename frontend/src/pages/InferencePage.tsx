@@ -29,11 +29,22 @@ type PredictionRow = {
   positive_probability: string
 }
 
-function fraudFeatureRow(): Record<string, number> {
-  const o: Record<string, number> = { Amount: 100 }
-  for (let i = 1; i <= 28; i++) o[`V${i}`] = 0
-  return o
-}
+const SAMPLE_FRAUD = JSON.stringify(
+  [
+    {
+      V1: 1.191857,  V2: 0.266151,  V3: 0.166480,  V4: 0.448154,
+      V5: 0.060018, V6: -0.082361, V7: -0.078803, V8: 0.085102,
+      V9: -0.255425, V10: -0.166974, V11: 1.612727, V12: 0.065437,
+      V13: -0.143772, V14: -0.270710, V15: 0.613654, V16: -0.397587,
+      V17: -0.054286, V18: -0.167962, V19: 0.084506, V20: -0.040308,
+      V21: -0.044795, V22: -0.100552, V23: -0.013495, V24: 0.015865,
+      V25: 0.229498, V26: -0.051276, V27: 0.089801, V28: 0.029640,
+      Amount: 49.99,
+    },
+  ],
+  null,
+  2,
+)
 
 const SAMPLE_ADULT = JSON.stringify(
   [
@@ -48,7 +59,6 @@ const SAMPLE_ADULT = JSON.stringify(
   null,
   2,
 )
-const SAMPLE_FRAUD = JSON.stringify([fraudFeatureRow()], null, 2)
 
 export function InferencePage() {
   const [profile, setProfile] = useState<InferenceProfile>('adult')
