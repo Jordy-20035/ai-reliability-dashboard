@@ -4,6 +4,8 @@ import {
   Box,
   Button,
   Chip,
+  Collapse,
+  Divider,
   LinearProgress,
   MenuItem,
   Paper,
@@ -12,7 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { PlayArrow } from '@mui/icons-material'
+import { PlayArrow, ExpandMore, ExpandLess } from '@mui/icons-material'
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'
 import { EmptyGridOverlay } from '../components/EmptyGridOverlay'
 import { getRuns, runDriftCheck } from '../api/endpoints'
@@ -49,6 +51,7 @@ const cols: GridColDef<RunRecord>[] = [
 export function WorkflowsPage() {
   const [rows, setRows] = useState<RunRecord[]>([])
   const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(false)
   const [scenario, setScenario] = useState<Scenario>('random_holdout')
   const [currentCsvPath, setCurrentCsvPath] = useState('')
   const [fraudD1Path, setFraudD1Path] = useState('')
@@ -106,32 +109,49 @@ export function WorkflowsPage() {
       )}
       {message && <Alert severity="info">{message}</Alert>}
 
-      {/* ---- Compact quick-run bar ---- */}
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mr: 0.5 }}>
-          Quick run:
-        </Typography>
-        <Select size="small" value={scenario} onChange={(e) => setScenario(e.target.value as Scenario)} sx={{ minWidth: 160 }}>
-          <MenuItem value="random_holdout">random_holdout</MenuItem>
-          <MenuItem value="age_shift">age_shift</MenuItem>
-          <MenuItem value="incoming_csv">incoming_csv</MenuItem>
-          <MenuItem value="fraud_d1_vs_d2">fraud_d1_vs_d2</MenuItem>
-          <MenuItem value="fraud_d2_vs_d3">fraud_d2_vs_d3</MenuItem>
-          <MenuItem value="fraud_d1_vs_d3">fraud_d1_vs_d3</MenuItem>
-        </Select>
-        {scenario === 'incoming_csv' && (
-          <TextField size="small" label="CSV path" value={currentCsvPath} onChange={(e) => setCurrentCsvPath(e.target.value)} sx={{ minWidth: 220 }} />
-        )}
-        {scenario.startsWith('fraud_') && (
-          <>
-            <TextField size="small" label="D1" value={fraudD1Path} onChange={(e) => setFraudD1Path(e.target.value)} sx={{ width: 130 }} />
-            <TextField size="small" label="D2" value={fraudD2Path} onChange={(e) => setFraudD2Path(e.target.value)} sx={{ width: 130 }} />
-            <TextField size="small" label="D3" value={fraudD3Path} onChange={(e) => setFraudD3Path(e.target.value)} sx={{ width: 130 }} />
-          </>
-        )}
-        <Button variant="contained" size="small" startIcon={<PlayArrow />} onClick={() => void onRunCheck()} disabled={loading}>
-          Run
+      {/* ---- Collapsible drift-check panel ---- */}
+      <Box>
+        <Button
+          variant="outlined"
+          size="small"
+          endIcon={open ? <ExpandLess /> : <ExpandMore />}
+          onClick={() => setOpen((v) => !v)}
+          sx={{ textTransform: 'none', fontWeight: 600 }}
+        >
+          Run Drift Check
         </Button>
+
+        <Collapse in={open} timeout="auto" unmountOnExit>
+          <Paper variant="outlined" sx={{ p: 2.5, mt: 1.5 }}>
+            <Typography variant="h6" gutterBottom>
+              Run Drift Check
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Select size="small" value={scenario} onChange={(e) => setScenario(e.target.value as Scenario)}>
+                <MenuItem value="random_holdout">random_holdout</MenuItem>
+                <MenuItem value="age_shift">age_shift</MenuItem>
+                <MenuItem value="incoming_csv">incoming_csv</MenuItem>
+                <MenuItem value="fraud_d1_vs_d2">fraud_d1_vs_d2</MenuItem>
+                <MenuItem value="fraud_d2_vs_d3">fraud_d2_vs_d3</MenuItem>
+                <MenuItem value="fraud_d1_vs_d3">fraud_d1_vs_d3</MenuItem>
+              </Select>
+              {scenario === 'incoming_csv' && (
+                <TextField size="small" label="Current CSV" value={currentCsvPath} onChange={(e) => setCurrentCsvPath(e.target.value)} sx={{ minWidth: 260 }} />
+              )}
+              {scenario.startsWith('fraud_') && (
+                <>
+                  <TextField size="small" label="D1 (opt)" value={fraudD1Path} onChange={(e) => setFraudD1Path(e.target.value)} sx={{ minWidth: 180 }} />
+                  <TextField size="small" label="D2 (opt)" value={fraudD2Path} onChange={(e) => setFraudD2Path(e.target.value)} sx={{ minWidth: 180 }} />
+                  <TextField size="small" label="D3 (opt)" value={fraudD3Path} onChange={(e) => setFraudD3Path(e.target.value)} sx={{ minWidth: 180 }} />
+                </>
+              )}
+              <Button variant="contained" startIcon={<PlayArrow />} onClick={() => void onRunCheck()} disabled={loading}>
+                Run Check
+              </Button>
+            </Box>
+          </Paper>
+        </Collapse>
       </Box>
 
       {/* ---- Runs table ---- */}
@@ -154,7 +174,7 @@ export function WorkflowsPage() {
           }}
           slots={{
             noRowsOverlay: () => (
-              <EmptyGridOverlay message="No workflow runs yet. Run a drift check from Overview or the shortcut above." />
+              <EmptyGridOverlay message="No workflow runs yet. Run a drift check from Overview or expand the panel above." />
             ),
           }}
         />
