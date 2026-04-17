@@ -7,6 +7,7 @@ import {
   Divider,
   Grid,
   LinearProgress,
+  Menu,
   MenuItem,
   Paper,
   Select,
@@ -29,17 +30,76 @@ type PredictionRow = {
   positive_probability: string
 }
 
-const SAMPLE_FRAUD = JSON.stringify(
+const SAMPLE_FRAUD_TEMPLATE_1 = JSON.stringify(
   [
     {
-      V1: 1.191857,  V2: 0.266151,  V3: 0.166480,  V4: 0.448154,
-      V5: 0.060018, V6: -0.082361, V7: -0.078803, V8: 0.085102,
-      V9: -0.255425, V10: -0.166974, V11: 1.612727, V12: 0.065437,
-      V13: -0.143772, V14: -0.270710, V15: 0.613654, V16: -0.397587,
-      V17: -0.054286, V18: -0.167962, V19: 0.084506, V20: -0.040308,
-      V21: -0.044795, V22: -0.100552, V23: -0.013495, V24: 0.015865,
-      V25: 0.229498, V26: -0.051276, V27: 0.089801, V28: 0.029640,
-      Amount: 49.99,
+      V1: -0.85,
+      V2: 0.72,
+      V3: -0.68,
+      V4: 1.25,
+      V5: -0.18,
+      V6: -0.35,
+      V7: -0.92,
+      V8: 0.41,
+      V9: -0.88,
+      V10: -0.74,
+      V11: 1.05,
+      V12: -0.95,
+      V13: -0.12,
+      V14: -1.1,
+      V15: 0.18,
+      V16: -0.32,
+      V17: -0.85,
+      V18: -0.08,
+      V19: 0.16,
+      V20: 0.05,
+      V21: 0.12,
+      V22: -0.02,
+      V23: -0.1,
+      V24: 0.08,
+      V25: 0.03,
+      V26: 0.06,
+      V27: 0.09,
+      V28: 0.04,
+      Amount: 89.5,
+    },
+  ],
+  null,
+  2,
+)
+
+const SAMPLE_FRAUD_TEMPLATE_2 = JSON.stringify(
+  [
+    {
+      V1: -1.65,
+      V2: 1.35,
+      V3: -1.05,
+      V4: 2.25,
+      V5: -0.35,
+      V6: -0.95,
+      V7: -1.55,
+      V8: 0.85,
+      V9: -1.6,
+      V10: -1.55,
+      V11: 2.15,
+      V12: -1.85,
+      V13: -0.4,
+      V14: -2.6,
+      V15: 0.28,
+      V16: -0.75,
+      V17: -1.75,
+      V18: -0.05,
+      V19: 0.3,
+      V20: 0.09,
+      V21: 0.35,
+      V22: -0.03,
+      V23: -0.28,
+      V24: 0.22,
+      V25: -0.03,
+      V26: 0.16,
+      V27: 0.24,
+      V28: 0.08,
+      Amount: 149.62,
     },
   ],
   null,
@@ -66,6 +126,7 @@ export function InferencePage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [result, setResult] = useState<InferenceResponse | null>(null)
+  const [fraudExampleAnchor, setFraudExampleAnchor] = useState<null | HTMLElement>(null)
 
   const cols = useMemo((): GridColDef<PredictionRow>[] => {
     const probH = profile === 'fraud' ? 'P(fraud)' : 'P(>50K)'
@@ -99,9 +160,26 @@ export function InferencePage() {
 
   function onProfileChange(next: InferenceProfile) {
     setProfile(next)
-    setPayloadText(next === 'fraud' ? SAMPLE_FRAUD : SAMPLE_ADULT)
+    setPayloadText(next === 'fraud' ? SAMPLE_FRAUD_TEMPLATE_1 : SAMPLE_ADULT)
     setResult(null)
     setMessage(null)
+  }
+
+  function loadExampleAdult() {
+    setPayloadText(SAMPLE_ADULT)
+  }
+
+  function openFraudExamplesMenu(el: HTMLElement) {
+    setFraudExampleAnchor(el)
+  }
+
+  function closeFraudExamplesMenu() {
+    setFraudExampleAnchor(null)
+  }
+
+  function loadExampleFraud(template: 1 | 2) {
+    setPayloadText(template === 1 ? SAMPLE_FRAUD_TEMPLATE_1 : SAMPLE_FRAUD_TEMPLATE_2)
+    closeFraudExamplesMenu()
   }
 
   async function onPredict() {
@@ -178,11 +256,24 @@ export function InferencePage() {
               <Button
                 variant="outlined"
                 startIcon={<RestartAlt />}
-                onClick={() => setPayloadText(profile === 'fraud' ? SAMPLE_FRAUD : SAMPLE_ADULT)}
+                onClick={(e) =>
+                  profile === 'fraud'
+                    ? openFraudExamplesMenu(e.currentTarget)
+                    : loadExampleAdult()
+                }
                 disabled={loading}
               >
                 Load Example
               </Button>
+              <Menu
+                anchorEl={fraudExampleAnchor}
+                open={Boolean(fraudExampleAnchor)}
+                onClose={closeFraudExamplesMenu}
+                disableAutoFocusItem
+              >
+                <MenuItem onClick={() => loadExampleFraud(1)}>Fraud template 1 (softer)</MenuItem>
+                <MenuItem onClick={() => loadExampleFraud(2)}>Fraud template 2 (strong)</MenuItem>
+              </Menu>
             </Box>
           </Paper>
         </Grid>
