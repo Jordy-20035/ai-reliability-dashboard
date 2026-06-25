@@ -98,7 +98,7 @@ export function AppLayout() {
                 Trustworthy AI
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                Control Center
+                Drift &amp; Retrain
               </Typography>
             </Box>
           </Stack>

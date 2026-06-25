@@ -76,6 +76,7 @@ export interface OverviewResponse {
     n_datasets: number
     n_baselines: number
     production_model_row_id: number | null
+    production_model_version: number | null
     last_run_policy_triggered: boolean | null
   }
   last_run: RunRecord | null

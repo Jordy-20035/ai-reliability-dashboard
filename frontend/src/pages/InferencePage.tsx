@@ -271,8 +271,8 @@ export function InferencePage() {
                 onClose={closeFraudExamplesMenu}
                 disableAutoFocusItem
               >
-                <MenuItem onClick={() => loadExampleFraud(1)}>Fraud template 1 (softer)</MenuItem>
-                <MenuItem onClick={() => loadExampleFraud(2)}>Fraud template 2 (strong)</MenuItem>
+                <MenuItem onClick={() => loadExampleFraud(1)}>Example 1 — borderline</MenuItem>
+                <MenuItem onClick={() => loadExampleFraud(2)}>Example 2 — high fraud score</MenuItem>
               </Menu>
             </Box>
           </Paper>

@@ -134,8 +134,12 @@ export function OverviewPage() {
         <Grid size={{ xs: 6, md: 3 }}>
           <KpiCard
             icon={<Settings fontSize="small" />}
-            label="Production Row"
-            value={overview?.kpis.production_model_row_id ?? '-'}
+            label="Production Model"
+            value={
+              overview?.kpis.production_model_version != null
+                ? `v${overview.kpis.production_model_version}`
+                : overview?.kpis.production_model_row_id ?? '-'
+            }
             subtitle="serving pointer"
           />
         </Grid>

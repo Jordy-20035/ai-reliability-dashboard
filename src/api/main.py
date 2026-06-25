@@ -22,6 +22,7 @@ from src.orchestration.config import OrchestratorConfig
 from src.orchestration.data_context import fraud_retrain_labeled_frames, split_labeled_reference_current
 from src.orchestration.engine import Orchestrator
 from src.orchestration.store import RunStore
+from src.paths import resolve_artifact_path
 from src.retraining.pipeline import run_retrain_pipeline
 
 
@@ -122,6 +123,11 @@ def create_app() -> FastAPI:
         datasets = dm.list_datasets(limit=20)
         baselines = dm.list_baselines(limit=20)
         production_id = lifecycle.get_production_model_id()
+        production_version = None
+        if production_id is not None:
+            prod_row = lifecycle.get_model_by_id(production_id)
+            if prod_row is not None:
+                production_version = prod_row.version_num
 
         return {
             "kpis": {
@@ -131,6 +137,7 @@ def create_app() -> FastAPI:
                 "n_datasets": len(datasets),
                 "n_baselines": len(baselines),
                 "production_model_row_id": production_id,
+                "production_model_version": production_version,
                 "last_run_policy_triggered": runs[0].policy_triggered if runs else None,
             },
             "last_run": asdict(runs[0]) if runs else None,
@@ -245,7 +252,7 @@ def create_app() -> FastAPI:
         if model_row is None:
             raise HTTPException(status_code=404, detail=f"Production model row {production_id} not found")
 
-        artifact_path = Path(model_row.artifact_path)
+        artifact_path = resolve_artifact_path(model_row.artifact_path)
         if not artifact_path.is_file():
             raise HTTPException(
                 status_code=500,
